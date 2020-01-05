@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEditor;
 
@@ -10,14 +11,13 @@ public class ObjectsController : MonoBehaviour
     //and here goes functions between them or functions attached to single object
     private List<string> AvailableObjects;
 
+    public GameObject[] FocusedObjects;
+    public GameObject[] StaticEnvironment;
+    public GameObject GroundMesh;
+
     void Start()
     {
         AvailableObjectsHarvest();
-    }
-
-    void Update()
-    {
-        
     }
 
     public List<string> GetAllObjects()
@@ -29,17 +29,18 @@ public class ObjectsController : MonoBehaviour
     {
         var Result = new List<string>();
 
-        Object[] data = AssetDatabase.LoadAllAssetsAtPath("Assets/Dummies/Prefabs");
-        foreach(Object Item in data)
+
+        DirectoryInfo dir = new DirectoryInfo(Application.dataPath + "/Dummies/Prefabs");
+        FileInfo[] info = dir.GetFiles("*.prefab");
+        foreach (FileInfo fileInfo in info)
         {
-            Debug.Log(Item.name);
+            string fullPath = fileInfo.FullName.Replace(@"\", "/");
+            string assetPath = "Assets" + fullPath.Replace(Application.dataPath, "");
+            GameObject prefab = AssetDatabase.LoadAssetAtPath(assetPath, typeof(GameObject)) as GameObject;
+
+            //AvailableObjects.Add(prefab.name);
         }
 
-        //var allsongs : Object[]= Resources.LoadAll("Assets/Dummies", GameObject);
-        //for (var song : Object in music)
-        //{
-        //    PickWhatToPlay();
-        //}
 
         return Result;
     }

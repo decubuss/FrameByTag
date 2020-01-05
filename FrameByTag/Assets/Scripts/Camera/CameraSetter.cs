@@ -5,56 +5,56 @@ using System.Linq;
 using UnityEngine;
 
 
-public class CameraSetter : MonoBehaviour
+public class CameraSetter : MonoBehaviour, INameAlternatable
 {
-    public Camera CurrentCamera;
-    public GameObject[] FocusedObjects;
-    public GameObject[] StaticEnvironment;
-    public GameObject GroundMesh;
+    private Camera CurrentCamera;//
 
-    private FrameAttributes Frame;//TODO: fukin refactor this shit 4 fields are too much
+    private ObjectsController ObjectsController;//
+    private GameObject[] FocusedObjects;//
 
-    private Vector3 CenterOfFrame;
-    private Vector3 LeftFrameCorner;
-    private Vector3 RightFrameCorner;
-    private GameObject ParentGO;
+    private FrameAttributes Frame;
+    
+    private GameObject ParentGO;//
 
-    private Vector3 RightObjectsLimit;
-    private Vector3 LeftObjectsLimit;
+    private Vector3 RightObjectsLimit;//
+    private Vector3 LeftObjectsLimit;//
 
     // Start is called before the first frame update
     void Start()
     {
-        ParentGO = new GameObject();
+        Frame = ScriptableObject.CreateInstance<FrameAttributes>();
+        ObjectsController = FindObjectOfType<ObjectsController>();
         CurrentCamera = gameObject.GetComponent<Camera>();
+
+        FocusedObjects = ObjectsController.FocusedObjects;
+
+        ParentGO = new GameObject();
         CameraDefaultShot();
-        LongShot();
-        //MediumShot();
+
     }
 
     private void CameraDefaultShot()
     {
-        Vector3 LeftBorderPoint = Vector3.zero;
-        Vector3 RightBorderPoint = Vector3.zero;
-        CenterOfFrame = Vector3.zero;
-        
-        CurrentCamera.transform.position = Calculate(out CenterOfFrame);
-        //CurrentCamera.transform.rotation = Quaternion.Euler(CalculateCameraRotation(CenterOfFrame).eulerAngles);
-        CurrentCamera.transform.rotation = CalculateCameraRotation(CenterOfFrame);
+        CurrentCamera.transform.position = CalculateCameraPosition();
+        CurrentCamera.transform.rotation = CalculateCameraRotation(Frame.CenterOfFrame);
     }
 
-        //TODO: make it possible to actually find first and last bc object are not always watch forward in camera view
-        //TODO: find a way get start and end of vector on which camera looks
-    
-
-    private Vector3 Calculate(out Vector3 CenterOfFrame)
+    public Dictionary<string[],string> GetAlternateNames()
     {
-        CenterOfFrame = CalculateCenterOfFrame();
+        var result = new Dictionary<string[], string>();
+        result.Add(new string[] { "long shot", "ls", "full shot" }, "LongShot");
+        result.Add(new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot");
+        return result;
+    }
+
+    private Vector3 CalculateCameraPosition()
+    {
+        Frame.CenterOfFrame = CalculateCenterOfFrame();
         Vector3 PerpendicularDirection = Vector3.zero;
-        var SpringArmLength = CalculateSpringArmLength(CenterOfFrame, 0.37);
+        var SpringArmLength = CalculateSpringArmLength(Frame.CenterOfFrame, 0.37f);
 
         PerpendicularDirection = CalculatePerpendicularDirection();
-        return CenterOfFrame + (SpringArmLength * PerpendicularDirection);
+        return Frame.CenterOfFrame + (SpringArmLength * PerpendicularDirection);
     }
 
     /// <summary>
@@ -107,7 +107,7 @@ public class CameraSetter : MonoBehaviour
             return ResultPoint;
         }
     }
-    private float CalculateSpringArmLength(Vector3 CenterOfFrame, double GivenCoefficient)
+    private float CalculateSpringArmLength(Vector3 CenterOfFrame, float GivenCoefficient)
     {
         var TopPoint = CenterOfFrame;
         TopPoint.y = CenterOfFrame.y * 2;
@@ -148,18 +148,18 @@ public class CameraSetter : MonoBehaviour
     }
     private Vector3 CalculatePerpendicularDirection()
     {
-        var Blyad = Vector3.zero;
+        var DirectionVector = Vector3.zero;
         if (FocusedObjects.Length > 1)
         {
-            Blyad = Vector3.Cross(FocusedObjects[0].transform.position - FocusedObjects[FocusedObjects.Length - 1].transform.position, Vector3.up);
-            Blyad.Normalize();
-            return Blyad;
+            DirectionVector = Vector3.Cross(FocusedObjects[0].transform.position - FocusedObjects[FocusedObjects.Length - 1].transform.position, Vector3.up);
+            DirectionVector.Normalize();
+            return DirectionVector;
         }
         else
         {
-            Blyad = FocusedObjects[0].transform.forward;
-            Blyad.Normalize();
-            return Blyad;
+            DirectionVector = FocusedObjects[0].transform.forward;
+            DirectionVector.Normalize();
+            return DirectionVector;
         }
     }
     private Quaternion CalculateCameraRotation(Vector3 CenterOfFrame)
@@ -219,17 +219,16 @@ public class CameraSetter : MonoBehaviour
 
     private void CalcFocusedObjectsBounds()
     {
-        if(LeftFrameCorner != null && RightFrameCorner != null)
+        if(Frame.LeftCorner != null && Frame.RightCorner != null)
         {
-            float ObjectsVariationsWidth = Vector3.Distance(LeftFrameCorner, RightFrameCorner) - GetFObjectsWidth();
-            Vector3 WidthCenter = new Vector3(CenterOfFrame.x, 0, CenterOfFrame.z);
-            Debug.Log(WidthCenter);
-            RightObjectsLimit = WidthCenter + (RightFrameCorner - WidthCenter).normalized * (ObjectsVariationsWidth / 2);
-            LeftObjectsLimit = WidthCenter + (LeftFrameCorner - WidthCenter).normalized * (ObjectsVariationsWidth / 2);
+            float ObjectsVariationsWidth = Vector3.Distance(Frame.LeftCorner, Frame.RightCorner) - GetFObjectsWidth();
+            Vector3 WidthCenter = new Vector3(Frame.CenterOfFrame.x, 0, Frame.CenterOfFrame.z);
+            RightObjectsLimit = WidthCenter + (Frame.RightCorner - WidthCenter).normalized * (ObjectsVariationsWidth / 2);
+            LeftObjectsLimit = WidthCenter + (Frame.LeftCorner - WidthCenter).normalized * (ObjectsVariationsWidth / 2);
         }
         //else but not neccessary
     }
-    private void GetFrameBounds()
+    private void CalcFrameBounds()
     {
         var TheDot = CurrentCamera.ViewportToWorldPoint(new Vector3(1, 0, CurrentCamera.nearClipPlane));
         var TheSot = CurrentCamera.ViewportToWorldPoint(new Vector3(0, 0, CurrentCamera.nearClipPlane));
@@ -242,11 +241,11 @@ public class CameraSetter : MonoBehaviour
 
         if (Physics.Raycast(Rightray, out Rhit, 100000))
         {
-            RightFrameCorner = Rhit.point;
+            Frame.RightCorner = Rhit.point;
         }
         if (Physics.Raycast(Leftray, out Lhit, 100000))
         {
-            LeftFrameCorner = Lhit.point;
+            Frame.LeftCorner = Lhit.point;
         }
     }
 
@@ -258,14 +257,14 @@ public class CameraSetter : MonoBehaviour
         Gizmos.DrawSphere(LeftObjectsLimit, 0.1f);
         Gizmos.DrawSphere(RightObjectsLimit, 0.1f);
         Gizmos.color = Color.blue;
-        Gizmos.DrawSphere(LeftFrameCorner, 0.1f);
-        Gizmos.DrawSphere(RightFrameCorner, 0.1f);
+        //Gizmos.DrawSphere(Frame.LeftCorner, 0.1f);
+        //Gizmos.DrawSphere(Frame.RightCorner, 0.1f);
 
     }
 
     private void GroupFObjects()
     {
-        ParentGO.transform.position = new Vector3(CenterOfFrame.x, 0, CenterOfFrame.z);
+        ParentGO.transform.position = new Vector3(Frame.CenterOfFrame.x, 0, Frame.CenterOfFrame.z);
 
         foreach (var Object in FocusedObjects)
         {
@@ -301,6 +300,7 @@ public class CameraSetter : MonoBehaviour
     /// </summary>
     public void VeryCloseShot()
     {
+        CameraDefaultShot();
         //get object's bone
         //get object actual size
         //set camera new location depend on object's actual size 
@@ -315,9 +315,9 @@ public class CameraSetter : MonoBehaviour
     {
         float CameraNewHeight = (float)(CurrentCamera.transform.position.y * 1.5);
 
-        Vector3 NewFrameCenter = new Vector3(CenterOfFrame.x, CameraNewHeight,CenterOfFrame.z);
+        Vector3 NewFrameCenter = new Vector3(Frame.CenterOfFrame.x, CameraNewHeight, Frame.CenterOfFrame.z);
         var PerpendicularDirection = CalculatePerpendicularDirection();
-        var SpringArmLength = CalculateSpringArmLength(NewFrameCenter, 0.8);
+        var SpringArmLength = CalculateSpringArmLength(NewFrameCenter, 0.8f);
 
         CurrentCamera.transform.position = NewFrameCenter + (PerpendicularDirection * SpringArmLength);
 
@@ -330,7 +330,7 @@ public class CameraSetter : MonoBehaviour
     public void LongShot()
     {
         CameraDefaultShot();
-        GetFrameBounds();
+        CalcFrameBounds();
         CalcFocusedObjectsBounds();
         GroupFObjects();
 

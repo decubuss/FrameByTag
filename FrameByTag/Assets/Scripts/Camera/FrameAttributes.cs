@@ -4,7 +4,14 @@ using UnityEngine;
 
 public class FrameAttributes : ScriptableObject
 {
-    public Vector3 FrameLeftLimit;
-    public Vector3 FrameRightLimit;
+    public Vector3 LeftCorner;
+    public Vector3 RightCorner;
     public Vector3 CenterOfFrame;
+
+    public FrameAttributes()
+    {
+        LeftCorner = Vector3.zero;
+        RightCorner = Vector3.zero;
+        CenterOfFrame = Vector3.zero;
+    }
 }
