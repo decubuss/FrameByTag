@@ -9,83 +9,62 @@ public class FrameDescription : MonoBehaviour
 {
     // Start is called before the first frame update
     private string PreviousFrameInput;
-    public string RawFrameInput;
+    private string RawFrameInput;
 
     private InputField DescriptionSource;
     private CameraSetter CameraSetter;
-    private ObjectsController ObjectsController;
-    private Dictionary<string, List<string>> ObjectsBones;
-    private Dictionary<string[], string> AlternateValues;
-    //object placer
-    //layers controller
-    //lighting ???
+    private ObjectsPlacementController PlacementController;
 
-    public void SetCurrentFrameInput(string FrameInput)
-    {
-        this.RawFrameInput = FrameInput;
-    }
+    public AvailableObjectsController AOController;
+
+    private Dictionary<string[], string> CameraCalls;
+    private Dictionary<string[], string> ObjectsCalls;
+
+    private List<string> ObjectTags;///TODO: basically here should be a sequence of all tags in case it influencive
 
     void Start()
     {
-        //AlternateValues = new 
+        ObjectTags = new List<string>();
+
+        AOController = ScriptableObject.CreateInstance<AvailableObjectsController>();
+        AOController.Init();
+
         DescriptionSource = FindObjectOfType<InputField>();
-
-        Debug.Log(DescriptionSource);
-
-        ObjectsBones = new Dictionary<string, List<string>>();
         CameraSetter = FindObjectOfType<CameraSetter>();
-        ObjectsController = FindObjectOfType<ObjectsController>();
+        PlacementController = FindObjectOfType<ObjectsPlacementController>();
 
         StartVariationsInit();
 
-        GetObjectsBones();
         //var Type = CameraRoller.GetType();
     }
 
     void Update()
     {
+        
         UpdateInput();
     }
 
     private void UpdateInput()
     {
-        RawFrameInput = DescriptionSource.text;
-
-        if(this.RawFrameInput != this.PreviousFrameInput)
+        if (DescriptionSource.text != "")
         {
-            PreviousFrameInput = RawFrameInput;
-            //and then run a function that defines if there is any tags
-            InputProcessing();
+            RawFrameInput = DescriptionSource.text;
+
+            if (this.RawFrameInput != this.PreviousFrameInput)
+            {
+                PreviousFrameInput = RawFrameInput;
+                //and then run a function that defines if there is any tags
+                InputProcessing();
+            }
+            
         }
+            
     }
 
     private void InputProcessing()
     {
-        //List<string> FrameTags = new List<string>();
-        //var SplittedInput = RawFrameInput.Split(' ');
-        //foreach(string Word in SplittedInput)//TODO: is it actually got to be a List? Figure out will ya?
-        //{
-        //    FrameTags.Add(Word);
-        //}
 
-        //if(ObjectsController.GetAllObjects() != null && FrameTags.Any( item => ObjectsController.GetAllObjects().Contains(item)))
-        //{
-        //    var Methods = CameraSetter.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
-
-        //    foreach (MethodInfo Method in Methods)
-        //    {
-        //        var Name = Method.Name;
-        //        var ProcessedInput = RawFrameInput;
-        //        if (RawFrameInput.Contains(Name))
-        //        {
-        //            CameraSetter.SendMessage(Name);
-        //        }
-
-        //    }
-            
-        //}
-
-        foreach(var AlternativeCalls in AlternateValues)
+        foreach(var AlternativeCalls in CameraCalls)
         {
             RawFrameInput.ToLower();
             foreach(string AltName in AlternativeCalls.Key)
@@ -95,29 +74,47 @@ public class FrameDescription : MonoBehaviour
                     CameraSetter.SendMessage(AlternativeCalls.Value);
                 }
             }
-        }
-    }
 
-    private void GetObjectsBones()
-    {
-        foreach(var Object in ObjectsController.FocusedObjects)
-        {
-            if(Object.GetComponentInChildren<SkinnedMeshRenderer>() != null)
-            {
-                List<string> Bones = new List<string>();
-                foreach(var bone in Object.GetComponentInChildren<SkinnedMeshRenderer>().bones)
-                {
-                    Bones.Add(bone.name);
-                }
-                ObjectsBones.Add(Object.name, Bones);
-            }
+            
         }
+
+        //medium shot 2 males OR male standing and man sitting medium shot
+
+        foreach (var AlternativeCalls in ObjectsCalls)
+        {
+            RawFrameInput.ToLower();
+            foreach (string AltName in AlternativeCalls.Key)
+            {
+                if (RawFrameInput.Contains(AltName) && !ObjectTags.Contains(AlternativeCalls.Value) )
+                {
+                    ObjectTags.Add(AlternativeCalls.Value);
+                    Debug.Log("added: " + AlternativeCalls.Value);
+                    PlacementController.UpdateRequiredObjects(ObjectTags);
+                }
+                //else if(!RawFrameInput.Contains(AltName) && ObjectTags.Contains(AltName))
+                //{
+                //    ObjectTags.Remove(AlternativeCalls.Value);
+                //    Debug.Log("removed: " + AlternativeCalls.Value);
+                //}
+
+                
+            }
+
+        }
+
+        
+
+
     }
 
     private void StartVariationsInit()
     {
         if (CameraSetter == null) { return; }
+        if (AOController == null) { return; }
 
-        AlternateValues = CameraSetter.GetAlternateNames();
+        CameraCalls = CameraSetter.GetAlternateNames();
+        ObjectsCalls = AOController.GetAlternateNames();
     }
+
+    
 }

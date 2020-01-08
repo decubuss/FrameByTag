@@ -9,7 +9,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
 {
     private Camera CurrentCamera;//
 
-    private ObjectsController ObjectsController;//
+    private ObjectsPlacementController ObjectsController;//
     private GameObject[] FocusedObjects;//
 
     private FrameAttributes Frame;
@@ -23,7 +23,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     void Start()
     {
         Frame = ScriptableObject.CreateInstance<FrameAttributes>();
-        ObjectsController = FindObjectOfType<ObjectsController>();
+        ObjectsController = FindObjectOfType<ObjectsPlacementController>();
         CurrentCamera = gameObject.GetComponent<Camera>();
 
         FocusedObjects = ObjectsController.FocusedObjects;
@@ -95,7 +95,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
             }
 
         }
-        else
+        else if (FocusedObjects.Length == 1)
         {
             Vector3 ResultPoint = FocusedObjects[0].transform.position;
             if(FocusedObjects[0].GetComponent<MeshFilter>() != null)
@@ -105,6 +105,10 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
                 ResultPoint.y = FocusedObjects[0].GetComponentInChildren<SkinnedMeshRenderer>().bounds.size.y / 2;
             }
             return ResultPoint;
+        }
+        else
+        {
+            return new Vector3(0, 2, 0);
         }
     }
     private float CalculateSpringArmLength(Vector3 CenterOfFrame, float GivenCoefficient)
@@ -155,11 +159,15 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
             DirectionVector.Normalize();
             return DirectionVector;
         }
-        else
+        else if(FocusedObjects.Length == 1)
         {
             DirectionVector = FocusedObjects[0].transform.forward;
             DirectionVector.Normalize();
             return DirectionVector;
+        }
+        else
+        {
+            return Vector3.forward.normalized;
         }
     }
     private Quaternion CalculateCameraRotation(Vector3 CenterOfFrame)
