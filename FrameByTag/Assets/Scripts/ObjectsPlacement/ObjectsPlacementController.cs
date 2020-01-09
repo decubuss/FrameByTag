@@ -9,7 +9,7 @@ public class ObjectsPlacementController : MonoBehaviour
     //and here goes functions between them or functions attached to single object
     private List<string> AvailableObjects;
 
-    public GameObject[] FocusedObjects;
+    public List<GameObject> FocusedObjects;
     public GameObject[] StaticEnvironment;
     public GameObject GroundMesh;
 
@@ -59,7 +59,7 @@ public class ObjectsPlacementController : MonoBehaviour
         foreach(string SceneObject in Objects)
         {
             //AOController.GetObject(SceneObject);
-            Instantiate(AOController.GetObject(SceneObject), Vector3.zero, Quaternion.identity);
+            FocusedObjects.Add(Instantiate(AOController.GetObject(SceneObject), Vector3.zero, Quaternion.identity));
         }
     }
     

@@ -10,7 +10,6 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     private Camera CurrentCamera;//
 
     private ObjectsPlacementController ObjectsController;//
-    private GameObject[] FocusedObjects;//
 
     private FrameAttributes Frame;
     
@@ -26,15 +25,15 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         ObjectsController = FindObjectOfType<ObjectsPlacementController>();
         CurrentCamera = gameObject.GetComponent<Camera>();
 
-        FocusedObjects = ObjectsController.FocusedObjects;
-
         ParentGO = new GameObject();
-        CameraDefaultShot();
+        DefaultShot();
 
     }
 
-    private void CameraDefaultShot()
+    private void DefaultShot()
     {
+        //CurrentCamera.transform.position = Vector3.zero;
+        //CurrentCamera.transform.rotation = Quaternion.identity;
         CurrentCamera.transform.position = CalculateCameraPosition();
         CurrentCamera.transform.rotation = CalculateCameraRotation(Frame.CenterOfFrame);
     }
@@ -66,21 +65,22 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     /// </returns>
     private Vector3 CalculateCenterOfFrame()
     {
-        if (FocusedObjects.Length > 1)
+        var FObjects = ObjectsController.FocusedObjects;
+        if (FObjects.Count > 1)
         {
-            Vector3 ResultPoint = FocusedObjects[0].transform.position + ((FocusedObjects[FocusedObjects.Length - 1].transform.position - FocusedObjects[0].transform.position) / 2);
+            Vector3 ResultPoint = FObjects[0].transform.position + ((FObjects[FObjects.Count - 1].transform.position - FObjects[0].transform.position) / 2);
             var AltResultPoint = ResultPoint;
 
-            if(FocusedObjects.Where(x => x.GetComponent<MeshFilter>() != null).LastOrDefault() != null )
+            if(FObjects.Where(x => x.GetComponent<MeshFilter>() != null).LastOrDefault() != null )
             {
-                ResultPoint.y = FocusedObjects.Where(x => x.GetComponent<MeshFilter>() != null)
+                ResultPoint.y = FObjects.Where(x => x.GetComponent<MeshFilter>() != null)
                                           .OrderByDescending(x => x.GetComponent<MeshFilter>().mesh.bounds.size.y)
                                           .First().GetComponent<MeshFilter>().mesh.bounds.size.y / 2;
             }
 
-            if(FocusedObjects.Where(x => x.GetComponentInChildren<SkinnedMeshRenderer>() != null).LastOrDefault() != null)
+            if(FObjects.Where(x => x.GetComponentInChildren<SkinnedMeshRenderer>() != null).LastOrDefault() != null)
             {
-                AltResultPoint.y = FocusedObjects.Where(x => x.GetComponentInChildren<SkinnedMeshRenderer>() != null)
+                AltResultPoint.y = FObjects.Where(x => x.GetComponentInChildren<SkinnedMeshRenderer>() != null)
                                          .OrderByDescending(x => x.GetComponentInChildren<SkinnedMeshRenderer>().bounds.size.y)
                                          .First().GetComponentInChildren<SkinnedMeshRenderer>().bounds.size.y / 2;
             }
@@ -95,14 +95,14 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
             }
 
         }
-        else if (FocusedObjects.Length == 1)
+        else if (FObjects.Count == 1)
         {
-            Vector3 ResultPoint = FocusedObjects[0].transform.position;
-            if(FocusedObjects[0].GetComponent<MeshFilter>() != null)
-                ResultPoint.y = FocusedObjects[0].GetComponent<MeshFilter>().mesh.bounds.size.y / 2;
+            Vector3 ResultPoint = FObjects[0].transform.position;
+            if(FObjects[0].GetComponent<MeshFilter>() != null)
+                ResultPoint.y = FObjects[0].GetComponent<MeshFilter>().mesh.bounds.size.y / 2;
             else
             {
-                ResultPoint.y = FocusedObjects[0].GetComponentInChildren<SkinnedMeshRenderer>().bounds.size.y / 2;
+                ResultPoint.y = FObjects[0].GetComponentInChildren<SkinnedMeshRenderer>().bounds.size.y / 2;
             }
             return ResultPoint;
         }
@@ -118,16 +118,17 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         var BottomPoint = CenterOfFrame;
         BottomPoint.y = 0;
 
+        var FObjects = ObjectsController.FocusedObjects;
         var SpringArmLength = 0f;
-        if (FocusedObjects.Length > 1)
+        if (FObjects.Count > 1)
         {
             float maxHeight = 0;
-            foreach (GameObject FocusedObject in FocusedObjects)
+            foreach (GameObject FocusedObject in FObjects)
             {
                 if (maxHeight < GetObjectHeight(FocusedObject))
                     maxHeight = GetObjectHeight(FocusedObject);
             }
-            float Width = Vector3.Distance(FocusedObjects[0].transform.position, FocusedObjects[FocusedObjects.Length - 1].transform.position);
+            float Width = Vector3.Distance(FObjects[0].transform.position, FObjects[FObjects.Count - 1].transform.position);
 
             if(maxHeight > Width)
             {
@@ -137,8 +138,8 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
             }
             else
             {
-                var ObjectsWidth = GetBounds(FocusedObjects[0]).extents.y + GetBounds(FocusedObjects[FocusedObjects.Length - 1]).extents.y;
-                SpringArmLength = (float)((Vector3.Distance(FocusedObjects[0].transform.position, FocusedObjects[FocusedObjects.Length - 1].transform.position) + ObjectsWidth / 2) / Mathf.Tan(45));
+                var ObjectsWidth = GetBounds(FObjects[0]).extents.y + GetBounds(FObjects[FObjects.Count - 1]).extents.y;
+                SpringArmLength = (float)((Vector3.Distance(FObjects[0].transform.position, FObjects[FObjects.Count - 1].transform.position) + ObjectsWidth / 2) / Mathf.Tan(45));
             }
 
         }
@@ -153,15 +154,17 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     private Vector3 CalculatePerpendicularDirection()
     {
         var DirectionVector = Vector3.zero;
-        if (FocusedObjects.Length > 1)
+
+        var FObjects = ObjectsController.FocusedObjects;
+        if (FObjects.Count > 1)
         {
-            DirectionVector = Vector3.Cross(FocusedObjects[0].transform.position - FocusedObjects[FocusedObjects.Length - 1].transform.position, Vector3.up);
+            DirectionVector = Vector3.Cross(FObjects[0].transform.position - FObjects[FObjects.Count - 1].transform.position, Vector3.up);
             DirectionVector.Normalize();
             return DirectionVector;
         }
-        else if(FocusedObjects.Length == 1)
+        else if(FObjects.Count == 1)
         {
-            DirectionVector = FocusedObjects[0].transform.forward;
+            DirectionVector = FObjects[0].transform.forward;
             DirectionVector.Normalize();
             return DirectionVector;
         }
@@ -205,8 +208,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     private float GetFObjectsWidth()
     {
         float ResultWidth = 0;
-
-        foreach (GameObject FocusedObject in FocusedObjects)
+        foreach (GameObject FocusedObject in ObjectsController.FocusedObjects)
         {
             ResultWidth += GetObjectWidth(FocusedObject);
         }
@@ -215,7 +217,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     private float GetFObjectsHeight()
     {
         float maxHeight = 0;
-        foreach(var Object in FocusedObjects)
+        foreach(var Object in ObjectsController.FocusedObjects)//TODO: update focused objects on event
         {
             if(maxHeight < GetObjectHeight(Object))
             {
@@ -274,7 +276,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     {
         ParentGO.transform.position = new Vector3(Frame.CenterOfFrame.x, 0, Frame.CenterOfFrame.z);
 
-        foreach (var Object in FocusedObjects)
+        foreach (var Object in ObjectsController.FocusedObjects)
         {
             Object.transform.parent = ParentGO.transform;
         }
@@ -308,7 +310,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     /// </summary>
     public void VeryCloseShot()
     {
-        CameraDefaultShot();
+        DefaultShot();
         //get object's bone
         //get object actual size
         //set camera new location depend on object's actual size 
@@ -321,7 +323,8 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     /// </summary>
     public void MediumShot()
     {
-        float CameraNewHeight = (float)(CurrentCamera.transform.position.y * 1.5);
+        DefaultShot();
+        float CameraNewHeight = (float)(GetFObjectsHeight() * 0.75);
 
         Vector3 NewFrameCenter = new Vector3(Frame.CenterOfFrame.x, CameraNewHeight, Frame.CenterOfFrame.z);
         var PerpendicularDirection = CalculatePerpendicularDirection();
@@ -337,7 +340,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     /// </summary>
     public void LongShot()
     {
-        CameraDefaultShot();
+        DefaultShot();
         CalcFrameBounds();
         CalcFocusedObjectsBounds();
         GroupFObjects();
