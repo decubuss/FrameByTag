@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
@@ -8,9 +9,8 @@ using UnityEngine.UI;
 public class FrameDescription : MonoBehaviour
 {
     // Start is called before the first frame update
-    private string PreviousFrameInput;
     private string RawFrameInput;
-
+    
     private InputField DescriptionSource;
     private CameraSetter CameraSetter;
     private ObjectsPlacementController PlacementController;
@@ -20,92 +20,66 @@ public class FrameDescription : MonoBehaviour
     private Dictionary<string[], string> CameraCalls;
     private Dictionary<string[], string> ObjectsCalls;
 
-    private List<string> ObjectTags;///TODO: basically here should be a sequence of all tags in case it influencive
+    private List<string> TagSequence;///TODO: basically here should be a sequence of all tags in case it influencive
+
+    public delegate void OnDescriptionChangeDelegate(string Input);
+    public static event OnDescriptionChangeDelegate OnDescriptionChange;
 
     void Start()
     {
-        ObjectTags = new List<string>();
+        TagSequence = new List<string>();
+        RawFrameInput = "";
 
         AOController = ScriptableObject.CreateInstance<AvailableObjectsController>();
         AOController.Init();
 
-        DescriptionSource = FindObjectOfType<InputField>();
+        if (DescriptionSource == null)
+        {
+            DescriptionSource = FindObjectOfType<InputField>();
+        }
         CameraSetter = FindObjectOfType<CameraSetter>();
         PlacementController = FindObjectOfType<ObjectsPlacementController>();
 
         StartVariationsInit();
-
-        //var Type = CameraRoller.GetType();
     }
 
-    void Update()
+    public void OnInputChange()
     {
-        
-        UpdateInput();
-    }
-
-    private void UpdateInput()
-    {
-        if (DescriptionSource.text != "")
+        if (DescriptionSource.text != "" && DescriptionSource.text != this.RawFrameInput)
         {
             RawFrameInput = DescriptionSource.text;
+            var CutInput = InputProcessing();
 
-            if (this.RawFrameInput != this.PreviousFrameInput)
-            {
-                PreviousFrameInput = RawFrameInput;
-                //and then run a function that defines if there is any tags
-                InputProcessing();
-            }
-            
+            if (OnDescriptionChange != null)
+                OnDescriptionChange(CutInput);
         }
-            
     }
-
-    private void InputProcessing()
+    
+    private string InputProcessing()
     {
+        var ResultSequence = new List<string>();
+        string[] words = RawFrameInput.ToLower().Split(' ');
+        var CutInput = RawFrameInput;
 
-        foreach(var AlternativeCalls in CameraCalls)
+        foreach (var AlternativeCalls in CameraCalls)
         {
-            RawFrameInput.ToLower();
-            foreach(string AltName in AlternativeCalls.Key)
+            foreach (string AltName in AlternativeCalls.Key)
             {
-                if (RawFrameInput.Contains(AltName))
+                if (words.Any(x => x == AltName))
                 {
-                    CameraSetter.SendMessage(AlternativeCalls.Value);
+                    words[Array.IndexOf(words, AltName)] = AlternativeCalls.Value;
+                    CutInput.Replace(AltName, "");
                 }
             }
-
-            
         }
 
         //medium shot 2 males OR male standing and man sitting medium shot
 
-        foreach (var AlternativeCalls in ObjectsCalls)
-        {
-            RawFrameInput.ToLower();
-            foreach (string AltName in AlternativeCalls.Key)
-            {
-                if (RawFrameInput.Contains(AltName) && !ObjectTags.Contains(AlternativeCalls.Value) )
-                {
-                    ObjectTags.Add(AlternativeCalls.Value);
-                    Debug.Log("added: " + AlternativeCalls.Value);
-                    PlacementController.UpdateRequiredObjects(ObjectTags);
-                }
-                //else if(!RawFrameInput.Contains(AltName) && ObjectTags.Contains(AltName))
-                //{
-                //    ObjectTags.Remove(AlternativeCalls.Value);
-                //    Debug.Log("removed: " + AlternativeCalls.Value);
-                //}
-
-                
-            }
-
-        }
-
-        
 
 
+        return CutInput;
     }
+
 
     private void StartVariationsInit()
     {
@@ -113,7 +87,7 @@ public class FrameDescription : MonoBehaviour
         if (AOController == null) { return; }
 
         CameraCalls = CameraSetter.GetAlternateNames();
-        ObjectsCalls = AOController.GetAlternateNames();
+
     }
 
     

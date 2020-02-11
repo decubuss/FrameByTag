@@ -7,16 +7,21 @@ using UnityEngine;
 
 public class CameraSetter : MonoBehaviour, INameAlternatable
 {
-    private Camera CurrentCamera;//
+    private enum ShotType
+    {
+        LongShot, CloseShot, MediumShot, ExtremelyLongShot, DefaultShot
+    }
 
-    private ObjectsPlacementController ObjectsController;//
+    private Camera CurrentCamera;
+    private ObjectsPlacementController ObjectsController;
 
     private FrameAttributes Frame;
-    
-    private GameObject ParentGO;//
+    //TODO: add thirds and centering
 
     private Vector3 RightObjectsLimit;//
     private Vector3 LeftObjectsLimit;//
+    private ShotType Shot;
+    
 
     // Start is called before the first frame update
     void Start()
@@ -24,26 +29,37 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         Frame = ScriptableObject.CreateInstance<FrameAttributes>();
         ObjectsController = FindObjectOfType<ObjectsPlacementController>();
         CurrentCamera = gameObject.GetComponent<Camera>();
+        FrameDescription.OnDescriptionChange += ShotTypeHandle;
 
-        ParentGO = new GameObject();
-        DefaultShot();
+        ObjectsPlacementController.OnStartupEndedEvent += DefaultShot;
+        ObjectsPlacementController.OnSpawnedObjectsChange += UpdateCameraTransform;
 
+    }
+
+    private void ShotTypeHandle(string input)
+    {
+        //if(input.Contains(shottype)) else build it up with a additive thing
+
+        foreach (var AlternativeCalls in GetAlternateNames())
+        {
+            foreach (string AltName in AlternativeCalls.Key)
+            {
+                if (input.Contains(AltName))
+                {
+                    this.SendMessage(AlternativeCalls.Value);
+                    return;
+                }
+            }
+        }
+
+        //define shot type here based on objects given from objects placer
     }
 
     private void DefaultShot()
     {
-        //CurrentCamera.transform.position = Vector3.zero;
-        //CurrentCamera.transform.rotation = Quaternion.identity;
         CurrentCamera.transform.position = CalculateCameraPosition();
         CurrentCamera.transform.rotation = CalculateCameraRotation(Frame.CenterOfFrame);
-    }
-
-    public Dictionary<string[],string> GetAlternateNames()
-    {
-        var result = new Dictionary<string[], string>();
-        result.Add(new string[] { "long shot", "ls", "full shot" }, "LongShot");
-        result.Add(new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot");
-        return result;
+        Shot = ShotType.DefaultShot;
     }
 
     private Vector3 CalculateCameraPosition()
@@ -65,45 +81,22 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     /// </returns>
     private Vector3 CalculateCenterOfFrame()
     {
-        var FObjects = ObjectsController.FocusedObjects;
+        var FObjects = ObjectsController.FocusLayer;
         if (FObjects.Count > 1)
         {
             Vector3 ResultPoint = FObjects[0].transform.position + ((FObjects[FObjects.Count - 1].transform.position - FObjects[0].transform.position) / 2);
             var AltResultPoint = ResultPoint;
-
-            if(FObjects.Where(x => x.GetComponent<MeshFilter>() != null).LastOrDefault() != null )
-            {
-                ResultPoint.y = FObjects.Where(x => x.GetComponent<MeshFilter>() != null)
-                                          .OrderByDescending(x => x.GetComponent<MeshFilter>().mesh.bounds.size.y)
-                                          .First().GetComponent<MeshFilter>().mesh.bounds.size.y / 2;
-            }
-
-            if(FObjects.Where(x => x.GetComponentInChildren<SkinnedMeshRenderer>() != null).LastOrDefault() != null)
-            {
-                AltResultPoint.y = FObjects.Where(x => x.GetComponentInChildren<SkinnedMeshRenderer>() != null)
-                                         .OrderByDescending(x => x.GetComponentInChildren<SkinnedMeshRenderer>().bounds.size.y)
-                                         .First().GetComponentInChildren<SkinnedMeshRenderer>().bounds.size.y / 2;
-            }
-            
-            if(AltResultPoint.y >= ResultPoint.y)
-            {
-                return AltResultPoint;
-            }
-            else
-            {
-                return ResultPoint;
-            }
-
+            //ResultPoint.y = GetObjectSize(FObjects.OrderByDescending(x => GetObjectSize(x).y).First()).y / 2;
+            ResultPoint.y = FObjects.OrderByDescending(x => x.GetComponent<SceneObject>().Bounds.size.y)
+                                                        .First()
+                                                        .GetComponent<SceneObject>()
+                                                        .Bounds.size.y / 2;
+            return ResultPoint;
         }
         else if (FObjects.Count == 1)
         {
             Vector3 ResultPoint = FObjects[0].transform.position;
-            if(FObjects[0].GetComponent<MeshFilter>() != null)
-                ResultPoint.y = FObjects[0].GetComponent<MeshFilter>().mesh.bounds.size.y / 2;
-            else
-            {
-                ResultPoint.y = FObjects[0].GetComponentInChildren<SkinnedMeshRenderer>().bounds.size.y / 2;
-            }
+            ResultPoint.y = FObjects[0].GetComponent<SceneObject>().GetObjectBounds().size.y / 2;
             return ResultPoint;
         }
         else
@@ -118,7 +111,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         var BottomPoint = CenterOfFrame;
         BottomPoint.y = 0;
 
-        var FObjects = ObjectsController.FocusedObjects;
+        var FObjects = ObjectsController.FocusLayer;
         var SpringArmLength = 0f;
         if (FObjects.Count > 1)
         {
@@ -155,7 +148,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     {
         var DirectionVector = Vector3.zero;
 
-        var FObjects = ObjectsController.FocusedObjects;
+        var FObjects = ObjectsController.FocusLayer;
         if (FObjects.Count > 1)
         {
             DirectionVector = Vector3.Cross(FObjects[0].transform.position - FObjects[FObjects.Count - 1].transform.position, Vector3.up);
@@ -182,33 +175,16 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
 
     private float GetObjectHeight(GameObject GObject)
     {
-        if(GObject.GetComponent<MeshFilter>() != null)
-        {
-            return 2 * GObject.GetComponent<MeshFilter>().mesh.bounds.extents.y;
-        }
-        else //if(GObject.GetComponentInChildren<SkinnedMeshRenderer>() != null)
-        {
-            return 2 * GObject.GetComponentInChildren<SkinnedMeshRenderer>().bounds.extents.y;
-        }
-
+        return 2 * GObject.GetComponent<SceneObject>().Bounds.extents.y;
     }
     private float GetObjectWidth(GameObject GObject)
     {
-        if (GObject.GetComponent<MeshFilter>() != null)
-        {
-            return 2 * GObject.GetComponent<MeshFilter>().mesh.bounds.extents.x;
-        }
-        else //if(GObject.GetComponentInChildren<SkinnedMeshRenderer>() != null)
-        {
-            return 2 * GObject.GetComponentInChildren<SkinnedMeshRenderer>().bounds.extents.x;
-        }
-
-        //return 2 * GObject.GetComponent<MeshFilter>().mesh.bounds.extents.x;
+        return 2 * GObject.GetComponent<SceneObject>().Bounds.extents.x;
     }
     private float GetFObjectsWidth()
     {
         float ResultWidth = 0;
-        foreach (GameObject FocusedObject in ObjectsController.FocusedObjects)
+        foreach (GameObject FocusedObject in ObjectsController.FocusLayer)
         {
             ResultWidth += GetObjectWidth(FocusedObject);
         }
@@ -217,7 +193,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     private float GetFObjectsHeight()
     {
         float maxHeight = 0;
-        foreach(var Object in ObjectsController.FocusedObjects)//TODO: update focused objects on event
+        foreach(var Object in ObjectsController.FocusLayer)//TODO: update focused objects on event
         {
             if(maxHeight < GetObjectHeight(Object))
             {
@@ -226,6 +202,8 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         }
         return maxHeight;
     }
+    
+
 
     private void CalcFocusedObjectsBounds()
     {
@@ -262,8 +240,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.yellow;
-        if(ParentGO != null)
-            Gizmos.DrawSphere(ParentGO.transform.position, 0.1f);
+        
         Gizmos.DrawSphere(LeftObjectsLimit, 0.1f);
         Gizmos.DrawSphere(RightObjectsLimit, 0.1f);
         Gizmos.color = Color.blue;
@@ -272,15 +249,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
 
     }
 
-    private void GroupFObjects()
-    {
-        ParentGO.transform.position = new Vector3(Frame.CenterOfFrame.x, 0, Frame.CenterOfFrame.z);
-
-        foreach (var Object in ObjectsController.FocusedObjects)
-        {
-            Object.transform.parent = ParentGO.transform;
-        }
-    }
+    
 
     private Bounds GetBounds(GameObject go)
     {
@@ -293,14 +262,23 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
             return  go.GetComponentInChildren<SkinnedMeshRenderer>().bounds;
         }
     }
-    
 
-
+    public Dictionary<string[], string> GetAlternateNames()
+    {
+        var result = new Dictionary<string[], string>();
+        result.Add(new string[] { "long shot", "ls", "full shot" }, "LongShot");
+        result.Add(new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot");
+        return result;
+    }
 
 
     public void UpdateCameraTransform(/*Camera enum value*/)
     {
         //TODO: make switch which takes enum value and focus object, makes new shot variation
+        //TODO: get shot type by objects compos
+        //but for now lets just use previous type by default
+        this.SendMessage(Shot.ToString());
+
     }
 
     //TODO: make functions for each shot variant
@@ -316,6 +294,8 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         //set camera new location depend on object's actual size 
         //set camera rotation to look at chosen bone
         Debug.Log("Extremely Close shot");
+        Shot = ShotType.CloseShot;
+
     }
 
     /// <summary>
@@ -333,6 +313,8 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         CurrentCamera.transform.position = NewFrameCenter + (PerpendicularDirection * SpringArmLength);
 
         Debug.Log("Medium shot");
+        Shot = ShotType.MediumShot;
+
     }
 
     /// <summary>
@@ -343,14 +325,15 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         DefaultShot();
         CalcFrameBounds();
         CalcFocusedObjectsBounds();
-        GroupFObjects();
 
         //make it random and test it
         var coef = UnityEngine.Random.Range(0f,1f);
         
-        ParentGO.transform.position = Vector3.Lerp(LeftObjectsLimit, RightObjectsLimit, coef);
+        //ParentGO.transform.position = Vector3.Lerp(LeftObjectsLimit, RightObjectsLimit, coef);
         
         Debug.Log("Long shot");
+        Shot = ShotType.LongShot;
+
     }
 
     /// <summary>
@@ -361,6 +344,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         //get object actual size
         //find distance between object and camera, so that environment could fit into camera view 
         Debug.Log("Extremely Long shot");
+        Shot = ShotType.ExtremelyLongShot;
 
     }
     //TODO: is it a unique setter for each camera? or is it one object that manages them all (it will be handy to have unique)?

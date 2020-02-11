@@ -14,7 +14,6 @@ public class AvailableObjectsController : ScriptableObject, INameAlternatable
     public void Init()
     {
         AvailableObjects = AvailableObjectsHarvest();
-        //TODO: this one not called at all
     }
 
     public void AddAvailableObject(GameObject SceneObject)
@@ -34,7 +33,6 @@ public class AvailableObjectsController : ScriptableObject, INameAlternatable
         }
         return Result;
     }
-
 
     private List<GameObject> AvailableObjectsHarvest()
     {
@@ -56,6 +54,9 @@ public class AvailableObjectsController : ScriptableObject, INameAlternatable
 
     public GameObject GetObject(string Name)
     {
-        return AvailableObjects.FirstOrDefault(x => x.name == Name);
+        if (AvailableObjects.FirstOrDefault(x => x.name == Name))
+            return AvailableObjects.FirstOrDefault(x => x.name == Name);
+        else
+            return null;
     }
 }
