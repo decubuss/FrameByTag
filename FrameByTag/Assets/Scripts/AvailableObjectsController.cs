@@ -36,6 +36,8 @@ public class AvailableObjectsController : ScriptableObject, INameAlternatable
 
     private List<GameObject> AvailableObjectsHarvest()
     {
+
+        //TODO: serialize already downloaded and check if anything unserialized is here
         var Result = new List<GameObject>();
 
         DirectoryInfo dir = new DirectoryInfo(Application.dataPath + "/Dummies/Prefabs");
@@ -49,6 +51,9 @@ public class AvailableObjectsController : ScriptableObject, INameAlternatable
             Result.Add(prefab);
         }
 
+
+
+
         return Result;
     }
 
@@ -58,5 +63,15 @@ public class AvailableObjectsController : ScriptableObject, INameAlternatable
             return AvailableObjects.FirstOrDefault(x => x.name == Name);
         else
             return null;
+    }
+
+    private void ObjectInitialization()
+    {
+        //custom import:
+        //get an fbx
+        //if slots for animation are filled - donload them
+        //get skinned mesh or mesh 
+        //apply controller with states of animations if skinned
+        //apply zones (boo hoo)
     }
 }
