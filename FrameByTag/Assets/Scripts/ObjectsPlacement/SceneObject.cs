@@ -14,13 +14,16 @@ public class SceneObject : MonoBehaviour
     {
         get
         {
-            if (_bounds == null)
+            if (_bounds == new Bounds(Vector3.zero, Vector3.zero))
             {
                 _bounds = GetObjectBounds();
                 return _bounds;
             }
             else
+            {
                 return _bounds;
+            }
+                
         }
 
     }
@@ -48,7 +51,6 @@ public class SceneObject : MonoBehaviour
             if (_height == 0f)
             {
                 _height = GetObjectBounds().extents.y * 2;//NULL: make it go back
-                Debug.Log(_height);
                 return _height;
             }
             else

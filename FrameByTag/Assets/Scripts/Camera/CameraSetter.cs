@@ -96,7 +96,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         else if (FObjects.Count == 1)
         {
             Vector3 ResultPoint = FObjects[0].transform.position;
-            ResultPoint.y = FObjects[0].GetComponent<SceneObject>().GetObjectBounds().size.y / 2;
+            ResultPoint.y = FObjects[0].GetComponent<SceneObject>().Bounds.size.y / 2;
             return ResultPoint;
         }
         else
@@ -118,8 +118,8 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
             float maxHeight = 0;
             foreach (GameObject FocusedObject in FObjects)
             {
-                if (maxHeight < GetObjectHeight(FocusedObject))
-                    maxHeight = GetObjectHeight(FocusedObject);
+                if (maxHeight < FocusedObject.GetComponent<SceneObject>().Height)
+                    maxHeight = FocusedObject.GetComponent<SceneObject>().Height;
             }
             float Width = Vector3.Distance(FObjects[0].transform.position, FObjects[FObjects.Count - 1].transform.position);
 
@@ -131,7 +131,8 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
             }
             else
             {
-                var ObjectsWidth = GetBounds(FObjects[0]).extents.y + GetBounds(FObjects[FObjects.Count - 1]).extents.y;
+                var ObjectsWidth = FObjects[0].GetComponent<SceneObject>().Bounds.extents.y 
+                                   + FObjects[FObjects.Count - 1].GetComponent<SceneObject>().Bounds.extents.y;
                 SpringArmLength = (float)((Vector3.Distance(FObjects[0].transform.position, FObjects[FObjects.Count - 1].transform.position) + ObjectsWidth / 2) / Mathf.Tan(45));
             }
 
@@ -172,21 +173,12 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         ResultRotation = new Quaternion(0, ResultRotation.y, 0, ResultRotation.w);
         return ResultRotation;
     }
-
-    private float GetObjectHeight(GameObject GObject)
-    {
-        return 2 * GObject.GetComponent<SceneObject>().Bounds.extents.y;
-    }
-    private float GetObjectWidth(GameObject GObject)
-    {
-        return 2 * GObject.GetComponent<SceneObject>().Bounds.extents.x;
-    }
     private float GetFObjectsWidth()
     {
         float ResultWidth = 0;
         foreach (GameObject FocusedObject in ObjectsController.FocusLayer)
         {
-            ResultWidth += GetObjectWidth(FocusedObject);
+            ResultWidth += FocusedObject.GetComponent<SceneObject>().Width;
         }
         return ResultWidth;
     }
@@ -195,9 +187,9 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         float maxHeight = 0;
         foreach(var Object in ObjectsController.FocusLayer)//TODO: update focused objects on event
         {
-            if(maxHeight < GetObjectHeight(Object))
+            if(maxHeight < Object.GetComponent<SceneObject>().Height)
             {
-                maxHeight = GetObjectHeight(Object);
+                maxHeight = Object.GetComponent<SceneObject>().Height;
             }
         }
         return maxHeight;
@@ -247,20 +239,6 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         //Gizmos.DrawSphere(Frame.LeftCorner, 0.1f);
         //Gizmos.DrawSphere(Frame.RightCorner, 0.1f);
 
-    }
-
-    
-
-    private Bounds GetBounds(GameObject go)
-    {
-        if (go.GetComponent<MeshFilter>() != null)
-        {
-            return go.GetComponent<MeshFilter>().mesh.bounds;
-        }
-        else 
-        {
-            return  go.GetComponentInChildren<SkinnedMeshRenderer>().bounds;
-        }
     }
 
     public Dictionary<string[], string> GetAlternateNames()

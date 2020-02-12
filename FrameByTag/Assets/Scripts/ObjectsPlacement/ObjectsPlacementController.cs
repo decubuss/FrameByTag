@@ -167,8 +167,8 @@ public class ObjectsPlacementController : MonoBehaviour
         else
         {
             Vector3 spawnPos = FocusLayer[FocusLayer.Count - 1].transform.position;
-            spawnPos.x = -(FocusLayer[FocusLayer.Count - 1].GetComponent<SceneObject>().GetObjectBounds().size.x / 2 
-                    + AOController.GetObject(ObjectToPlace).GetComponent<SceneObject>().GetObjectBounds().size.x / 2);
+            spawnPos.x = -(FocusLayer[FocusLayer.Count - 1].GetComponent<SceneObject>().Bounds.size.x / 2 
+                    + AOController.GetObject(ObjectToPlace).GetComponent<SceneObject>().Bounds.size.x / 2);
 
             var pointer = Instantiate(AOController.GetObject(ObjectToPlace), spawnPos, Quaternion.identity);
             FocusLayer.Add(pointer);
