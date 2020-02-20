@@ -29,7 +29,8 @@ public class AvailableObjectsController : ScriptableObject, INameAlternatable
         var Result = new Dictionary<string[], string>();
         foreach (var AvblObj in AvailableObjects)
         {
-            Result.Add(AvblObj.GetComponent<SceneObject>().Keys, AvblObj.GetComponent<SceneObject>().Name);
+            if(AvblObj.GetComponent<SceneObject>() != null)
+                Result.Add(AvblObj.GetComponent<SceneObject>().Keys, AvblObj.GetComponent<SceneObject>().Name);
         }
         return Result;
     }
@@ -40,18 +41,24 @@ public class AvailableObjectsController : ScriptableObject, INameAlternatable
         //TODO: serialize already downloaded and check if anything unserialized is here
         var Result = new List<GameObject>();
 
-        DirectoryInfo dir = new DirectoryInfo(Application.dataPath + "/Dummies/Prefabs");
-        FileInfo[] info = dir.GetFiles("*.prefab");
-        foreach (FileInfo fileInfo in info)
+        //DirectoryInfo dir = new DirectoryInfo(Application.dataPath + "/Dummies/Prefabs");
+        //FileInfo[] info = dir.GetFiles("*.prefab");
+        //foreach (FileInfo fileInfo in info)
+        //{
+        //    string fullPath = fileInfo.FullName.Replace(@"\", "/");
+        //    string assetPath = "Assets" + fullPath.Replace(Application.dataPath, "");
+        //    GameObject prefab = AssetDatabase.LoadAssetAtPath(assetPath, typeof(GameObject)) as GameObject;
+
+        //    Result.Add(prefab);
+        //}
+
+
+
+
+        foreach (var ImportedObject in Resources.LoadAll("Dummy",typeof(GameObject)) )
         {
-            string fullPath = fileInfo.FullName.Replace(@"\", "/");
-            string assetPath = "Assets" + fullPath.Replace(Application.dataPath, "");
-            GameObject prefab = AssetDatabase.LoadAssetAtPath(assetPath, typeof(GameObject)) as GameObject;
-
-            Result.Add(prefab);
+            Result.Add((GameObject)ImportedObject);
         }
-
-
 
 
         return Result;

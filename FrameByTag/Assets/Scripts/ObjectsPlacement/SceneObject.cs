@@ -60,12 +60,12 @@ public class SceneObject : MonoBehaviour
 
     public void Start()
     {
-        //var AnimPointer = gameObject.GetComponent<Animator>();
-        //if (AnimPointer != null)
-        //{
-        //    AnimPointer.speed = 0f;
-        //    AnimPointer.PlayInFixedTime("Idle01", 0, 0.0f);
-        //}
+        var AnimPointer = gameObject.GetComponent<Animator>();
+        if (AnimPointer != null)
+        {
+            AnimPointer.speed = 0f;
+            AnimPointer.PlayInFixedTime("Idle", 0, 0.0f);
+        }
     }
 
     public Bounds GetObjectBounds()

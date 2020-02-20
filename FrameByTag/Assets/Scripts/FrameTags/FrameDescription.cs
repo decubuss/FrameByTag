@@ -18,7 +18,6 @@ public class FrameDescription : MonoBehaviour
     public AvailableObjectsController AOController;
 
     private Dictionary<string[], string> CameraCalls;
-    private Dictionary<string[], string> ObjectsCalls;
 
     private List<string> TagSequence;///TODO: basically here should be a sequence of all tags in case it influencive
 
@@ -37,10 +36,7 @@ public class FrameDescription : MonoBehaviour
         {
             DescriptionSource = FindObjectOfType<InputField>();
         }
-        CameraSetter = FindObjectOfType<CameraSetter>();
-        PlacementController = FindObjectOfType<ObjectsPlacementController>();
-
-        StartVariationsInit();
+        
     }
 
     public void OnInputChange()
@@ -48,47 +44,11 @@ public class FrameDescription : MonoBehaviour
         if (DescriptionSource.text != "" && DescriptionSource.text != this.RawFrameInput)
         {
             RawFrameInput = DescriptionSource.text;
-            var CutInput = InputProcessing();
+            //var CutInput = InputProcessing();
 
             if (OnDescriptionChange != null)
-                OnDescriptionChange(CutInput);
+                OnDescriptionChange(RawFrameInput);
         }
     }
-    
-    private string InputProcessing()
-    {
-        var ResultSequence = new List<string>();
-        string[] words = RawFrameInput.ToLower().Split(' ');
-        var CutInput = RawFrameInput;
-
-        foreach (var AlternativeCalls in CameraCalls)
-        {
-            foreach (string AltName in AlternativeCalls.Key)
-            {
-                if (words.Any(x => x == AltName))
-                {
-                    words[Array.IndexOf(words, AltName)] = AlternativeCalls.Value;
-                    CutInput.Replace(AltName, "");
-                }
-            }
-        }
-
-        //medium shot 2 males OR male standing and man sitting medium shot
-
-
-
-        return CutInput;
-    }
-
-
-    private void StartVariationsInit()
-    {
-        if (CameraSetter == null) { return; }
-        if (AOController == null) { return; }
-
-        CameraCalls = CameraSetter.GetAlternateNames();
-
-    }
-
     
 }

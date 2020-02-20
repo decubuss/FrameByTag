@@ -12,16 +12,23 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         LongShot, CloseShot, MediumShot, ExtremelyLongShot, DefaultShot
     }
 
+    private enum HorizontalThird
+    {
+        FirstThird, Center, LastThird, Auto
+    }
+
     private Camera CurrentCamera;
     private ObjectsPlacementController ObjectsController;
 
     private FrameAttributes Frame;
-    //TODO: add thirds and centering
 
     private Vector3 RightObjectsLimit;//
     private Vector3 LeftObjectsLimit;//
+
     private ShotType Shot;
-    
+    private Vector3 ShotInitialPos;
+
+    private HorizontalThird _third;
 
     // Start is called before the first frame update
     void Start()
@@ -29,27 +36,54 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         Frame = ScriptableObject.CreateInstance<FrameAttributes>();
         ObjectsController = FindObjectOfType<ObjectsPlacementController>();
         CurrentCamera = gameObject.GetComponent<Camera>();
-        FrameDescription.OnDescriptionChange += ShotTypeHandle;
 
-        ObjectsPlacementController.OnStartupEndedEvent += DefaultShot;
+        ObjectsPlacementController.OnStartupEndedEvent += StartupShot;
+
         ObjectsPlacementController.OnSpawnedObjectsChange += UpdateCameraTransform;
+        FrameDescription.OnDescriptionChange += ShotOptionsHandle;
+
 
     }
 
-    private void ShotTypeHandle(string input)
+    private void StartupShot()
+    {
+        DefaultShot();
+        Shot = ShotType.DefaultShot;
+        _third = HorizontalThird.FirstThird;
+        ApplyThird(_third);
+    }
+    
+    private void ShotOptionsHandle(string input)
     {
         //if(input.Contains(shottype)) else build it up with a additive thing
 
-        foreach (var AlternativeCalls in GetAlternateNames())
+        var Keywords = GetAlternateNames();
+        var processedInput = input.ToLower();
+        foreach (var Keyword in Keywords)
         {
-            foreach (string AltName in AlternativeCalls.Key)
+            foreach(string AltName in Keyword.Key)
             {
                 if (input.Contains(AltName))
                 {
-                    this.SendMessage(AlternativeCalls.Value);
-                    return;
+                    processedInput = processedInput.Replace(AltName, Keyword.Value);
                 }
             }
+        }
+
+
+
+        foreach (var ShotType in Enum.GetValues(typeof(ShotType)).Cast<ShotType>())
+        {
+            if (input.Contains(ShotType.ToString().ToLower()))
+                this.Shot = ShotType;//TODO: make apply for a shotype as thirds
+            //this.SendMessage(AlternativeCalls.Value);
+        }
+
+        foreach (var ThirdType in Enum.GetValues(typeof(HorizontalThird)).Cast<HorizontalThird>() )
+        {
+            if (processedInput.Contains(ThirdType.ToString()))
+                _third = ThirdType;
+
         }
 
         //define shot type here based on objects given from objects placer
@@ -59,7 +93,34 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     {
         CurrentCamera.transform.position = CalculateCameraPosition();
         CurrentCamera.transform.rotation = CalculateCameraRotation(Frame.CenterOfFrame);
-        Shot = ShotType.DefaultShot;
+        ShotInitialPos = CurrentCamera.transform.position;
+    }
+
+    private void ApplyThird(HorizontalThird third)
+    {
+        CalcFocusedObjectsBounds();
+        var lineSplitted = Vector3.Distance(LeftObjectsLimit, RightObjectsLimit) / 3;
+        Vector3 CalculatedPos = Vector3.zero;
+        switch (third)
+        {
+            case HorizontalThird.Auto:
+                //AI???
+                break;
+            case HorizontalThird.FirstThird:
+                CalculatedPos = ShotInitialPos + CurrentCamera.transform.right * lineSplitted;
+                break;
+            case HorizontalThird.Center:
+                CalculatedPos = ShotInitialPos;
+                break;
+            case HorizontalThird.LastThird:
+                CalculatedPos = ShotInitialPos + (-CurrentCamera.transform.right * lineSplitted);
+                break;
+        }
+
+        //CalculatedPos = (CurrentCamera.transform.position - CalculatedPos).normalized * Vector3.Distance(CurrentCamera.transform.position, CalculatedPos);
+
+        Debug.Log(CalculatedPos);
+        CurrentCamera.transform.position = CalculatedPos;//ADD TO THE DIPLOMA ISSUES THAT POSITION IN UNITY CANT BE SET PROPERLY
     }
 
     private Vector3 CalculateCameraPosition()
@@ -199,7 +260,9 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
 
     private void CalcFocusedObjectsBounds()
     {
-        if(Frame.LeftCorner != null && Frame.RightCorner != null)
+        CalcFrameBounds();
+
+        if (Frame.LeftCorner != null && Frame.RightCorner != null)
         {
             float ObjectsVariationsWidth = Vector3.Distance(Frame.LeftCorner, Frame.RightCorner) - GetFObjectsWidth();
             Vector3 WidthCenter = new Vector3(Frame.CenterOfFrame.x, 0, Frame.CenterOfFrame.z);
@@ -210,11 +273,11 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     }
     private void CalcFrameBounds()
     {
-        var TheDot = CurrentCamera.ViewportToWorldPoint(new Vector3(1, 0, CurrentCamera.nearClipPlane));
-        var TheSot = CurrentCamera.ViewportToWorldPoint(new Vector3(0, 0, CurrentCamera.nearClipPlane));
+        var LeftCorner = CurrentCamera.ViewportToWorldPoint(new Vector3(1, 0, CurrentCamera.nearClipPlane));
+        var Rightcorner = CurrentCamera.ViewportToWorldPoint(new Vector3(0, 0, CurrentCamera.nearClipPlane));
 
-        Ray Rightray = new Ray(CurrentCamera.transform.position, (TheDot - CurrentCamera.transform.position).normalized);
-        Ray Leftray = new Ray(CurrentCamera.transform.position, (TheSot - CurrentCamera.transform.position).normalized);
+        Ray Rightray = new Ray(CurrentCamera.transform.position, (LeftCorner - CurrentCamera.transform.position).normalized);
+        Ray Leftray = new Ray(CurrentCamera.transform.position, (Rightcorner - CurrentCamera.transform.position).normalized);
 
         RaycastHit Rhit = new RaycastHit();
         RaycastHit Lhit = new RaycastHit();
@@ -229,21 +292,24 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         }
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.yellow;
+    //private void OnDrawGizmos()
+    //{
+    //    Gizmos.color = Color.yellow;
         
-        Gizmos.DrawSphere(LeftObjectsLimit, 0.1f);
-        Gizmos.DrawSphere(RightObjectsLimit, 0.1f);
-        Gizmos.color = Color.blue;
-        //Gizmos.DrawSphere(Frame.LeftCorner, 0.1f);
-        //Gizmos.DrawSphere(Frame.RightCorner, 0.1f);
+    //    Gizmos.DrawSphere(LeftObjectsLimit, 0.1f);
+    //    Gizmos.DrawSphere(RightObjectsLimit, 0.1f);
+    //    Gizmos.color = Color.blue;
+    //    //Gizmos.DrawSphere(Frame.LeftCorner, 0.1f);
+    //    //Gizmos.DrawSphere(Frame.RightCorner, 0.1f);
 
-    }
+    //}
 
     public Dictionary<string[], string> GetAlternateNames()
     {
         var result = new Dictionary<string[], string>();
+        result.Add(new string[] { "first third", "screen left"}, "FirstThird");
+        result.Add(new string[] { "center", "centered"}, "Center");
+        result.Add(new string[] { "last third", "screen right" }, "LastThird");
         result.Add(new string[] { "long shot", "ls", "full shot" }, "LongShot");
         result.Add(new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot");
         return result;
@@ -255,8 +321,9 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         //TODO: make switch which takes enum value and focus object, makes new shot variation
         //TODO: get shot type by objects compos
         //but for now lets just use previous type by default
-        this.SendMessage(Shot.ToString());
 
+        this.SendMessage(Shot.ToString());
+        ApplyThird(_third);
     }
 
     //TODO: make functions for each shot variant
@@ -301,7 +368,6 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     public void LongShot()
     {
         DefaultShot();
-        CalcFrameBounds();
         CalcFocusedObjectsBounds();
 
         //make it random and test it

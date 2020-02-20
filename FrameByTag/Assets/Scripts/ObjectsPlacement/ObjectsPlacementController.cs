@@ -38,13 +38,11 @@ public class ObjectsPlacementController : MonoBehaviour
     }
 
     /// <summary>
-    /// Creates and spawns default objects suitable for any shot type
+    /// Spawns default scene objects
     /// </summary>
     public void SceneDefaultContentSetup()
     {
-        //spawn male and straight ground
-        FocusLayerSpawn("AdultMale");
-        //ground: check
+        FocusLayerSpawn("Dummy");
 
         if (OnStartupEndedEvent != null)
             OnStartupEndedEvent();
