@@ -16,6 +16,18 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     {
         FirstThird, Center, LastThird, Auto
     }
+    private enum VerticalAngle
+    {
+        BirdsEye, High, EyeLevel, Low, MouseEye
+    }
+    private enum HorizontalAngle
+    {
+        RightAngle, LeftAngle, Center, DeadCenter
+    }
+
+    //public Dictionary<string[], string> AlternateName = new Dictionary<string[], string>();
+
+
 
     private Camera CurrentCamera;
     private ObjectsPlacementController ObjectsController;
@@ -29,34 +41,34 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     private Vector3 ShotInitialPos;
 
     private HorizontalThird _third;
+    private VerticalAngle _verticalAngle;
 
     // Start is called before the first frame update
     void Start()
     {
-        Frame = ScriptableObject.CreateInstance<FrameAttributes>();
+        Frame = new FrameAttributes();
         ObjectsController = FindObjectOfType<ObjectsPlacementController>();
-        CurrentCamera = gameObject.GetComponent<Camera>();
+        CurrentCamera = Camera.main;
 
         ObjectsPlacementController.OnStartupEndedEvent += StartupShot;
 
-        ObjectsPlacementController.OnSpawnedObjectsChange += UpdateCameraTransform;
+        //ObjectsPlacementController.OnSpawnedObjectsChange += UpdateCameraTransform;
+        //ObjectsPlacementController.OnSpawnedObjectsChange += ShotOptionsHandle;
         FrameDescription.OnDescriptionChange += ShotOptionsHandle;
-
-
     }
+
+
 
     private void StartupShot()
     {
         DefaultShot();
         Shot = ShotType.DefaultShot;
-        _third = HorizontalThird.FirstThird;
+        _third = HorizontalThird.Center;
         ApplyThird(_third);
     }
-    
+
     private void ShotOptionsHandle(string input)
     {
-        //if(input.Contains(shottype)) else build it up with a additive thing
-
         var Keywords = GetAlternateNames();
         var processedInput = input.ToLower();
         foreach (var Keyword in Keywords)
@@ -70,11 +82,9 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
             }
         }
 
-
-
         foreach (var ShotType in Enum.GetValues(typeof(ShotType)).Cast<ShotType>())
         {
-            if (input.Contains(ShotType.ToString().ToLower()))
+            if (processedInput.Contains(ShotType.ToString()))
                 this.Shot = ShotType;//TODO: make apply for a shotype as thirds
             //this.SendMessage(AlternativeCalls.Value);
         }
@@ -82,57 +92,114 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         foreach (var ThirdType in Enum.GetValues(typeof(HorizontalThird)).Cast<HorizontalThird>() )
         {
             if (processedInput.Contains(ThirdType.ToString()))
-                _third = ThirdType;
+                this._third = ThirdType;
 
         }
 
+        //foreach (var HorizontalAngle in Enum.GetValues(typeof(HorizontalAngle)).Cast<HorizontalThird>())
+        //{
+        //    if (processedInput.Contains(HorizontalAngle.ToString()))
+        //        _third = ThirdType;
+
+        //}
+
+        //foreach (var VerticalAngle in Enum.GetValues(typeof(VerticalAngle)).Cast<HorizontalThird>())
+        //{
+        //    if (processedInput.Contains(VerticalAngle.ToString()))
+        //        _third = ThirdType;
+
+        //}
         //define shot type here based on objects given from objects placer
+
+        UpdateCameraTransform();
     }
 
-    private void DefaultShot()
+    private void DefaultShot(float springArmLenCoef = 0.37f)
     {
-        CurrentCamera.transform.position = CalculateCameraPosition();
+        CurrentCamera.transform.position = CalculateCameraPosition(springArmLenCoef);
         CurrentCamera.transform.rotation = CalculateCameraRotation(Frame.CenterOfFrame);
         ShotInitialPos = CurrentCamera.transform.position;
     }
 
+    
+
     private void ApplyThird(HorizontalThird third)
+    {
+        var thirdsGO = CurrentCamera.transform.Find("Thirds");
+        Transform focusTransform = ObjectsController.FocusLayer.First().transform;
+
+        var relativePos = CurrentCamera.transform.InverseTransformPoint(focusTransform.position);
+        thirdsGO.localPosition = new Vector3(0, 0, relativePos.z);
+
+        float scaleCoef = relativePos.z / 2;
+        thirdsGO.localScale = Vector3.one * scaleCoef;
+
+        Vector3 thirdPoint = Vector3.zero;
+        switch (third)
+        {
+            case HorizontalThird.FirstThird:
+                thirdPoint = thirdsGO.Find("FirstThird").position;
+                break;
+            case HorizontalThird.Center:
+                thirdPoint = thirdsGO.Find("Center").position;
+                break;
+            case HorizontalThird.LastThird:
+                thirdPoint = thirdsGO.Find("LastThird").position;
+                break;
+        }
+
+        int Direction = (thirdPoint.x < focusTransform.position.x) ? 1 : -1;
+        Debug.Log(Mathf.Abs(thirdPoint.x - focusTransform.position.x));
+        CurrentCamera.transform.position = new Vector3(Mathf.Abs(thirdPoint.x - focusTransform.position.x), 0, 0) * Direction + ShotInitialPos;
+
+    }
+    private void ApplyHAngle(HorizontalAngle angle) { }
+    private void ApplyVAngle(VerticalAngle angle)
     {
         CalcFocusedObjectsBounds();
         var lineSplitted = Vector3.Distance(LeftObjectsLimit, RightObjectsLimit) / 3;
         Vector3 CalculatedPos = Vector3.zero;
-        switch (third)
+        switch (angle)
         {
-            case HorizontalThird.Auto:
+            case VerticalAngle.BirdsEye:
                 //AI???
+                //rotate around focus group, massive quat +offset to rotation around z, which should be parallel to the line of view(Z vector of camera)
                 break;
-            case HorizontalThird.FirstThird:
-                CalculatedPos = ShotInitialPos + CurrentCamera.transform.right * lineSplitted;
+            case VerticalAngle.High:
+                //rotate around focus group, recognisable +offset to default Zrotation
+                //which should be parallel to the line of view(Z vector of camera)
                 break;
-            case HorizontalThird.Center:
-                CalculatedPos = ShotInitialPos;
+            case VerticalAngle.EyeLevel:
+                //rotate around focus group, no offest since default Zroation is eye level
+                //, which should be parallel to the line of view(Z vector of camera)
                 break;
-            case HorizontalThird.LastThird:
-                CalculatedPos = ShotInitialPos + (-CurrentCamera.transform.right * lineSplitted);
+            case VerticalAngle.Low:
+                //rotate around focus group, recognisable -offset to default Zrotation
+                //, which should be parallel to the line of view(Z vector of camera)
+                break;
+            case VerticalAngle.MouseEye:
+                //rotate around focus group, massive -offset to default Zrotation, but keep it away from ground intersection
+                //, which should be parallel to the line of view(Z vector of camera)
                 break;
         }
 
         //CalculatedPos = (CurrentCamera.transform.position - CalculatedPos).normalized * Vector3.Distance(CurrentCamera.transform.position, CalculatedPos);
 
         Debug.Log(CalculatedPos);
-        CurrentCamera.transform.position = CalculatedPos;//ADD TO THE DIPLOMA ISSUES THAT POSITION IN UNITY CANT BE SET PROPERLY
+        CurrentCamera.transform.position = CalculatedPos;
     }
 
-    private Vector3 CalculateCameraPosition()
+    private Vector3 CalculateCameraPosition(float springArmCoef)
     {
         Frame.CenterOfFrame = CalculateCenterOfFrame();
         Vector3 PerpendicularDirection = Vector3.zero;
-        var SpringArmLength = CalculateSpringArmLength(Frame.CenterOfFrame, 0.37f);
+        var SpringArmLength = CalculateSpringArmLength(Frame.CenterOfFrame, springArmCoef);
 
         PerpendicularDirection = CalculatePerpendicularDirection();
         return Frame.CenterOfFrame + (SpringArmLength * PerpendicularDirection);
     }
 
+    #region calculations
     /// <summary>
     /// Finds a middle between the most left and right objects,
     /// the Y of it is half of the biggest height along objects
@@ -255,7 +322,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         }
         return maxHeight;
     }
-    
+    #endregion
 
 
     private void CalcFocusedObjectsBounds()
@@ -290,19 +357,27 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         {
             Frame.LeftCorner = Lhit.point;
         }
+
+        //put a middle dot down, then ray to center of viewtoworld point
+        //now you have half-height of screen
     }
 
-    //private void OnDrawGizmos()
-    //{
-    //    Gizmos.color = Color.yellow;
-        
-    //    Gizmos.DrawSphere(LeftObjectsLimit, 0.1f);
-    //    Gizmos.DrawSphere(RightObjectsLimit, 0.1f);
-    //    Gizmos.color = Color.blue;
-    //    //Gizmos.DrawSphere(Frame.LeftCorner, 0.1f);
-    //    //Gizmos.DrawSphere(Frame.RightCorner, 0.1f);
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.yellow;
 
-    //}
+        //Gizmos.DrawSphere(LeftObjectsLimit, 0.1f);
+        //Gizmos.DrawSphere(RightObjectsLimit, 0.1f);
+
+        //Gizmos.color = Color.blue;
+        //Gizmos.DrawSphere(Frame.LeftCorner, 0.1f);
+        //Gizmos.DrawSphere(Frame.RightCorner, 0.1f);
+
+
+        //var Center=
+        //Gizmos.DrawSphere()
+
+    }
 
     public Dictionary<string[], string> GetAlternateNames()
     {
@@ -312,9 +387,9 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         result.Add(new string[] { "last third", "screen right" }, "LastThird");
         result.Add(new string[] { "long shot", "ls", "full shot" }, "LongShot");
         result.Add(new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot");
+        result.Add(new string[] { "large shot", "open shot", "really long shot"}, "ExtremelyLongShot");
         return result;
     }
-
 
     public void UpdateCameraTransform(/*Camera enum value*/)
     {
@@ -322,12 +397,15 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         //TODO: get shot type by objects compos
         //but for now lets just use previous type by default
 
-        this.SendMessage(Shot.ToString());
+        if (Shot == ShotType.DefaultShot)
+            DefaultShot();
+        else
+            this.SendMessage(Shot.ToString());
+
         ApplyThird(_third);
     }
 
-    //TODO: make functions for each shot variant
-
+    #region shots
     /// <summary>
     /// Take an extremely close shot of an object's detail/action
     /// </summary>
@@ -355,7 +433,8 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         var PerpendicularDirection = CalculatePerpendicularDirection();
         var SpringArmLength = CalculateSpringArmLength(NewFrameCenter, 0.8f);
 
-        CurrentCamera.transform.position = NewFrameCenter + (PerpendicularDirection * SpringArmLength);
+        var result = NewFrameCenter + (PerpendicularDirection * SpringArmLength);
+        CurrentCamera.transform.position = result;
 
         Debug.Log("Medium shot");
         Shot = ShotType.MediumShot;
@@ -368,11 +447,8 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     public void LongShot()
     {
         DefaultShot();
-        CalcFocusedObjectsBounds();
+        //CalcFocusedObjectsBounds();
 
-        //make it random and test it
-        var coef = UnityEngine.Random.Range(0f,1f);
-        
         //ParentGO.transform.position = Vector3.Lerp(LeftObjectsLimit, RightObjectsLimit, coef);
         
         Debug.Log("Long shot");
@@ -387,11 +463,55 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     {
         //get object actual size
         //find distance between object and camera, so that environment could fit into camera view 
+        DefaultShot(0.17f);
+
+        //after that rot is 0
+        //get a screen space used by focus layer
+        //keep going back until used screenspace is 3-5%
         Debug.Log("Extremely Long shot");
         Shot = ShotType.ExtremelyLongShot;
 
     }
     //TODO: is it a unique setter for each camera? or is it one object that manages them all (it will be handy to have unique)?
     //but if it is unique, that means these objects gotta be created by someone 
+    #endregion
 
+
+
+
+
+    
+     /*private void ApplyThird(HorizontalThird third)
+    {
+        CalcFocusedObjectsBounds();
+        var lineSplitted = Vector3.Distance(LeftObjectsLimit, RightObjectsLimit) / 3;
+        Vector3 CalculatedPos = Vector3.zero;
+        switch (third)
+        {
+            case HorizontalThird.Auto:
+                //AI???
+                break;
+            case HorizontalThird.FirstThird:
+                CalculatedPos = ShotInitialPos + CurrentCamera.transform.right * lineSplitted;
+                break;
+            case HorizontalThird.Center:
+                CalculatedPos = ShotInitialPos;
+                break;
+            case HorizontalThird.LastThird:
+                CalculatedPos = ShotInitialPos + (-CurrentCamera.transform.right * lineSplitted);
+                break;
+        }
+
+        //CalculatedPos = (CurrentCamera.transform.position - CalculatedPos).normalized * Vector3.Distance(CurrentCamera.transform.position, CalculatedPos);
+
+        var objWorldPos = ObjectsController.FocusLayer.First().transform.position;
+        var objScreenPos = CurrentCamera.WorldToScreenPoint(objWorldPos);
+
+        Debug.Log(objScreenPos);
+
+        //Debug.Log(CalculatedPos);
+        CurrentCamera.transform.position = CalculatedPos;
+    }//store the change to undo/make it static
+
+     */
 }

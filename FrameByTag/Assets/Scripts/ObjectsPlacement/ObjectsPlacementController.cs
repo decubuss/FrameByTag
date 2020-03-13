@@ -10,15 +10,15 @@ public class ObjectsPlacementController : MonoBehaviour
 
     //need to store all objects, their states attributes and etc in a way they gotta be callable
     //and here goes functions between them or functions attached to single object
-    private List<string> AvailableObjects;
-
     private GameObject ParentGO;
 
     public List<GameObject> FocusLayer;
+    public Vector3 FocusTransform;
     public List<GameObject> BackgroundLayer;
     public GameObject GroundMesh;
 
     private List<string> SpawnedObjects;
+
     private AvailableObjectsController AOController;
 
     public delegate void OnSpawnedObjectschangeDelegate();
@@ -30,11 +30,15 @@ public class ObjectsPlacementController : MonoBehaviour
     void Start()
     {
         SpawnedObjects = new List<string>();
-        AOController = FindObjectOfType<FrameDescription>().AOController;
+        AOController = new AvailableObjectsController();
+
         ParentGO = new GameObject();
-        FrameDescription.OnDescriptionChange += ProcessInput;
+        FrameDescription.OnDescriptionChange += PlacementHandle;
 
         SceneDefaultContentSetup();
+
+        if (OnStartupEndedEvent != null)
+            OnStartupEndedEvent();
     }
 
     /// <summary>
@@ -42,22 +46,22 @@ public class ObjectsPlacementController : MonoBehaviour
     /// </summary>
     public void SceneDefaultContentSetup()
     {
-        FocusLayerSpawn("Dummy");
+        if (FocusLayer.Contains(AOController.GetObject("Dummy"))) { return; }
 
-        if (OnStartupEndedEvent != null)
-            OnStartupEndedEvent();
+        FocusLayerSpawn("Dummy");
     }
-    public void ProcessInput(string Input)
+
+    public void PlacementHandle(string Input)
     {
         List<string> ResultSequence = Input.Split(' ').ToList<string>();
 
-        foreach (var AlternativeCalls in AOController.GetAlternateNames())
+        foreach (var AlternativeName in AOController.GetAlternateNames())
         {
-            foreach (string AltName in AlternativeCalls.Key)
+            foreach (string AltName in AlternativeName.Key)
             {
                 while (ResultSequence.Any(x => x == AltName) /*&& !TagSequence.Contains(AlternativeCalls.Value)*/)
                 {
-                    ResultSequence[ResultSequence.FindIndex(ind => ind.Equals(AltName))] = AlternativeCalls.Value;
+                    ResultSequence[ResultSequence.FindIndex(ind => ind.Equals(AltName))] = AlternativeName.Value;
                 }
             }
         }
@@ -71,6 +75,8 @@ public class ObjectsPlacementController : MonoBehaviour
 
         UpdateBackground(ResultSequence);
         UpdateSceneObjects(ResultSequence);
+        if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
+            SceneDefaultContentSetup();
 
         if (OnSpawnedObjectsChange != null)
             OnSpawnedObjectsChange();

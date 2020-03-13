@@ -11,43 +11,39 @@ public class FrameDescription : MonoBehaviour
     // Start is called before the first frame update
     private string RawFrameInput;
     
-    private InputField DescriptionSource;
-    private CameraSetter CameraSetter;
-    private ObjectsPlacementController PlacementController;
+    public InputField DescriptionSource;
 
-    public AvailableObjectsController AOController;
-
-    private Dictionary<string[], string> CameraCalls;
-
-    private List<string> TagSequence;///TODO: basically here should be a sequence of all tags in case it influencive
+    [HideInInspector]
+    public ObjectsPlacementController PlacementController;
 
     public delegate void OnDescriptionChangeDelegate(string Input);
     public static event OnDescriptionChangeDelegate OnDescriptionChange;
 
     void Start()
     {
-        TagSequence = new List<string>();
-        RawFrameInput = "";
-
-        AOController = ScriptableObject.CreateInstance<AvailableObjectsController>();
-        AOController.Init();
+        PlacementController = FindObjectOfType<ObjectsPlacementController>();
 
         if (DescriptionSource == null)
         {
-            DescriptionSource = FindObjectOfType<InputField>();
+            DescriptionSource = GameObject.Find("DescriptionField").GetComponent<InputField>();
         }
-        
+
+        //TODO:subscribe on both of them to collect actual tags to store them if needed
+        //OR 
+        //make an entire class up for serialization needs
     }
 
-    public void OnInputChange()
+    public void OnInputEnter()
     {
+        //TODO: MINOR - make cursor stand there after enter
         if (DescriptionSource.text != "" && DescriptionSource.text != this.RawFrameInput)
         {
+            
             RawFrameInput = DescriptionSource.text;
-            //var CutInput = InputProcessing();
 
             if (OnDescriptionChange != null)
                 OnDescriptionChange(RawFrameInput);
+            
         }
     }
     

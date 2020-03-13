@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class FrameAttributes : ScriptableObject
+public class FrameAttributes
 {
     public Vector3 LeftCorner;
     public Vector3 RightCorner;

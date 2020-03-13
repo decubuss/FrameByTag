@@ -7,14 +7,16 @@ using System.IO;
 using System.Linq;
 
 
-public class AvailableObjectsController : ScriptableObject, INameAlternatable
+public class AvailableObjectsController : INameAlternatable
 {
     public List<GameObject> AvailableObjects;
 
-    public void Init()
+
+    public AvailableObjectsController()
     {
         AvailableObjects = AvailableObjectsHarvest();
     }
+    
 
     public void AddAvailableObject(GameObject SceneObject)
     {
