@@ -17,7 +17,7 @@ public class FrameDescription : MonoBehaviour
     public ObjectsPlacementController PlacementController;
 
     public delegate void OnDescriptionChangeDelegate(string Input);
-    public static event OnDescriptionChangeDelegate OnDescriptionChange;
+    public static event OnDescriptionChangeDelegate OnDescriptionChangedEvent;
 
     void Start()
     {
@@ -41,10 +41,15 @@ public class FrameDescription : MonoBehaviour
             
             RawFrameInput = DescriptionSource.text;
 
-            if (OnDescriptionChange != null)
-                OnDescriptionChange(RawFrameInput);
+            if (OnDescriptionChangedEvent != null)
+                OnDescriptionChangedEvent(RawFrameInput);
             
         }
+    }
+
+    private void ScreenplayLocation(string framedescription)
+    {
+
     }
     
 }

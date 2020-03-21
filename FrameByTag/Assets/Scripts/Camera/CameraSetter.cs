@@ -12,24 +12,24 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         LongShot, CloseShot, MediumShot, ExtremelyLongShot, DefaultShot
     }
 
-    private enum HorizontalThird
+    public enum HorizontalThird
     {
         FirstThird, Center, LastThird, Auto
     }
-    private enum VerticalAngle
+    public enum VerticalAngle
     {
         BirdsEye, High, EyeLevel, Low, MouseEye
     }
-    private enum HorizontalAngle
+    public enum HorizontalAngle
     {
-        RightAngle, LeftAngle, Center, DeadCenter
+        RightAngle, LeftAngle, Front, DeadFront
     }
 
     //public Dictionary<string[], string> AlternateName = new Dictionary<string[], string>();
+    private BaseDetail _baseDetail;
 
-
-
-    private Camera CurrentCamera;
+    [HideInInspector]
+    public Camera CurrentCamera;
     private ObjectsPlacementController ObjectsController;
 
     private FrameAttributes Frame;
@@ -41,6 +41,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     private Vector3 ShotInitialPos;
 
     private HorizontalThird _third;
+    private HorizontalAngle _horizontalAngle;
     private VerticalAngle _verticalAngle;
 
     // Start is called before the first frame update
@@ -49,26 +50,31 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         Frame = new FrameAttributes();
         ObjectsController = FindObjectOfType<ObjectsPlacementController>();
         CurrentCamera = Camera.main;
+        _baseDetail = new GameObject("BaseDetail").AddComponent<BaseDetail>();
+
 
         ObjectsPlacementController.OnStartupEndedEvent += StartupShot;
 
-        //ObjectsPlacementController.OnSpawnedObjectsChange += UpdateCameraTransform;
         //ObjectsPlacementController.OnSpawnedObjectsChange += ShotOptionsHandle;
-        FrameDescription.OnDescriptionChange += ShotOptionsHandle;
+        FrameDescription.OnDescriptionChangedEvent += ShotOptionsHandle;
     }
-
-
 
     private void StartupShot()
     {
-        DefaultShot();
         Shot = ShotType.DefaultShot;
         _third = HorizontalThird.Center;
-        ApplyThird(_third);
+        _verticalAngle = VerticalAngle.EyeLevel;
+        _horizontalAngle = HorizontalAngle.Front;
+
+        UpdateCameraTransform();
+        ObjectsPlacementController.OnStartupEndedEvent -= StartupShot;
     }
 
     private void ShotOptionsHandle(string input)
     {
+        ObjectsPlacementController.OnContentPreparedEvent += UpdateCameraTransform;
+        _baseDetail.UpdatePosition();
+
         var Keywords = GetAlternateNames();
         var processedInput = input.ToLower();
         foreach (var Keyword in Keywords)
@@ -96,22 +102,19 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
 
         }
 
-        //foreach (var HorizontalAngle in Enum.GetValues(typeof(HorizontalAngle)).Cast<HorizontalThird>())
-        //{
-        //    if (processedInput.Contains(HorizontalAngle.ToString()))
-        //        _third = ThirdType;
+        foreach (var HorizontalAngle in Enum.GetValues(typeof(HorizontalAngle)).Cast<HorizontalAngle>())
+        {
+            if (processedInput.Contains(HorizontalAngle.ToString()))
+                this._horizontalAngle = HorizontalAngle;
+        }
 
-        //}
-
-        //foreach (var VerticalAngle in Enum.GetValues(typeof(VerticalAngle)).Cast<HorizontalThird>())
-        //{
-        //    if (processedInput.Contains(VerticalAngle.ToString()))
-        //        _third = ThirdType;
-
-        //}
+        foreach (var VerticalAngle in Enum.GetValues(typeof(VerticalAngle)).Cast<VerticalAngle>())
+        {
+            if (processedInput.Contains(VerticalAngle.ToString()))
+                this._verticalAngle = VerticalAngle;
+        }
         //define shot type here based on objects given from objects placer
 
-        UpdateCameraTransform();
     }
 
     private void DefaultShot(float springArmLenCoef = 0.37f)
@@ -149,44 +152,82 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         }
 
         int Direction = (thirdPoint.x < focusTransform.position.x) ? 1 : -1;
-        Debug.Log(Mathf.Abs(thirdPoint.x - focusTransform.position.x));
+        //Debug.Log(Mathf.Abs(thirdPoint.x - focusTransform.position.x));
         CurrentCamera.transform.position = new Vector3(Mathf.Abs(thirdPoint.x - focusTransform.position.x), 0, 0) * Direction + ShotInitialPos;
 
     }
-    private void ApplyHAngle(HorizontalAngle angle) { }
-    private void ApplyVAngle(VerticalAngle angle)
+    private void ApplyHAngle(HorizontalAngle angle)
     {
-        CalcFocusedObjectsBounds();
-        var lineSplitted = Vector3.Distance(LeftObjectsLimit, RightObjectsLimit) / 3;
-        Vector3 CalculatedPos = Vector3.zero;
+        Quaternion CalculatedRot = _baseDetail.transform.rotation;
+
+        var focus = new Vector3(_baseDetail.transform.forward.x, 0, _baseDetail.transform.forward.z);
+
+        var camera = _baseDetail.transform.position - CurrentCamera.transform.position ;
+        camera = new Vector3(camera.x, 0, camera.z);
+
+        float Angle = Vector3.Angle(focus, camera);
+        Vector3 cross = Vector3.Cross(focus, camera);
+        Angle = cross.y < 0 ? -Angle : Angle;
+
+        string debugline = "Horizontal angle: ";
         switch (angle)
         {
-            case VerticalAngle.BirdsEye:
-                //AI???
-                //rotate around focus group, massive quat +offset to rotation around z, which should be parallel to the line of view(Z vector of camera)
+            case HorizontalAngle.Front:
+                CalculatedRot.y = Quaternion.Euler(0, 180 - Angle, 0).y;//_baseDetail.transform.rotation.x
+                debugline += angle.ToString();
+                
                 break;
-            case VerticalAngle.High:
+            case HorizontalAngle.DeadFront:
+                CalculatedRot.y = Quaternion.Euler(-30f, 0, 0).x;
+                debugline += angle.ToString();
                 //rotate around focus group, recognisable +offset to default Zrotation
                 //which should be parallel to the line of view(Z vector of camera)
                 break;
-            case VerticalAngle.EyeLevel:
-                //rotate around focus group, no offest since default Zroation is eye level
-                //, which should be parallel to the line of view(Z vector of camera)
+            case HorizontalAngle.RightAngle:
+                CalculatedRot.y = Quaternion.Euler(0, 180 - (Angle - 45), 0).y;
+                debugline += angle.ToString();
+
                 break;
-            case VerticalAngle.Low:
-                //rotate around focus group, recognisable -offset to default Zrotation
-                //, which should be parallel to the line of view(Z vector of camera)
+            case HorizontalAngle.LeftAngle:
+                CalculatedRot.y = Quaternion.Euler(0, 180 - (Angle + 45), 0).y;
+                debugline += angle.ToString();
+
                 break;
-            case VerticalAngle.MouseEye:
-                //rotate around focus group, massive -offset to default Zrotation, but keep it away from ground intersection
-                //, which should be parallel to the line of view(Z vector of camera)
-                break;
+            
         }
 
-        //CalculatedPos = (CurrentCamera.transform.position - CalculatedPos).normalized * Vector3.Distance(CurrentCamera.transform.position, CalculatedPos);
-
-        Debug.Log(CalculatedPos);
-        CurrentCamera.transform.position = CalculatedPos;
+        //Debug.Log(debugline);
+        _baseDetail.transform.rotation = CalculatedRot;
+    }
+    private void ApplyVAngle(VerticalAngle angle)
+    {
+        Quaternion CalculatedRot = _baseDetail.transform.rotation;
+        string debugline = "Vertical angle: ";
+        switch (angle)
+        {
+            case VerticalAngle.BirdsEye:
+                CalculatedRot.x = Quaternion.Euler(-60f, 0, 0).x;
+                debugline += angle.ToString();
+                break;
+            case VerticalAngle.High:
+                CalculatedRot.x = Quaternion.Euler(-30f,0 ,0).x;
+                debugline += angle.ToString();
+                break;
+            case VerticalAngle.EyeLevel:
+                CalculatedRot.x = Quaternion.Euler(0, 0, 0).x;
+                debugline += angle.ToString();
+                break;
+            case VerticalAngle.Low:
+                CalculatedRot.x = Quaternion.Euler(30f, 0, 0).x;
+                debugline += angle.ToString();
+                break;
+            case VerticalAngle.MouseEye:
+                CalculatedRot.x = Quaternion.Euler(60f, 0, 0).x;
+                debugline += angle.ToString();
+                break;
+        }
+        //Debug.Log(debugline);
+        _baseDetail.transform.rotation = CalculatedRot;
     }
 
     private Vector3 CalculateCameraPosition(float springArmCoef)
@@ -210,6 +251,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     private Vector3 CalculateCenterOfFrame()
     {
         var FObjects = ObjectsController.FocusLayer;
+
         if (FObjects.Count > 1)
         {
             Vector3 ResultPoint = FObjects[0].transform.position + ((FObjects[FObjects.Count - 1].transform.position - FObjects[0].transform.position) / 2);
@@ -385,13 +427,25 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         result.Add(new string[] { "first third", "screen left"}, "FirstThird");
         result.Add(new string[] { "center", "centered"}, "Center");
         result.Add(new string[] { "last third", "screen right" }, "LastThird");
+
+        result.Add(new string[] { "birds eye" }, "BirdsEye");
+        result.Add(new string[] { "high" }, "High");
+        result.Add(new string[] { "eye level" }, "EyeLevel");
+        result.Add(new string[] { "low" }, "Low");
+        result.Add(new string[] { "mouse eye" }, "MouseEye");
+
+        result.Add(new string[] { "front" }, "Front");
+        result.Add(new string[] { "dead front" }, "DeadFront");
+        result.Add(new string[] { "right angle" }, "RightAngle");
+        result.Add(new string[] { "left angle" }, "LeftAngle");
+
         result.Add(new string[] { "long shot", "ls", "full shot" }, "LongShot");
         result.Add(new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot");
         result.Add(new string[] { "large shot", "open shot", "really long shot"}, "ExtremelyLongShot");
         return result;
     }
 
-    public void UpdateCameraTransform(/*Camera enum value*/)
+    public void UpdateCameraTransform()
     {
         //TODO: make switch which takes enum value and focus object, makes new shot variation
         //TODO: get shot type by objects compos
@@ -403,6 +457,10 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
             this.SendMessage(Shot.ToString());
 
         ApplyThird(_third);
+        ApplyHAngle(_horizontalAngle);
+        ApplyVAngle(_verticalAngle);
+
+        ObjectsPlacementController.OnContentPreparedEvent -= UpdateCameraTransform;
     }
 
     #region shots

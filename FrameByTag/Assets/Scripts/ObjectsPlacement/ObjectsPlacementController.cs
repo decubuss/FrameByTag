@@ -21,11 +21,11 @@ public class ObjectsPlacementController : MonoBehaviour
 
     private AvailableObjectsController AOController;
 
-    public delegate void OnSpawnedObjectschangeDelegate();
-    public static event OnSpawnedObjectschangeDelegate OnSpawnedObjectsChange;
+    public delegate void OnContentPrepared();
+    public static event OnContentPrepared OnContentPreparedEvent;
+    public static event OnContentPrepared OnStartupEndedEvent;
 
-    public delegate void OnStartupEnded();
-    public static event OnStartupEnded OnStartupEndedEvent;
+    //public delegate void OnStartupEnded();
 
     void Start()
     {
@@ -33,7 +33,7 @@ public class ObjectsPlacementController : MonoBehaviour
         AOController = new AvailableObjectsController();
 
         ParentGO = new GameObject();
-        FrameDescription.OnDescriptionChange += PlacementHandle;
+        FrameDescription.OnDescriptionChangedEvent += PlacementHandle;
 
         SceneDefaultContentSetup();
 
@@ -78,8 +78,8 @@ public class ObjectsPlacementController : MonoBehaviour
         if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
             SceneDefaultContentSetup();
 
-        if (OnSpawnedObjectsChange != null)
-            OnSpawnedObjectsChange();
+        if (OnContentPreparedEvent != null)
+            OnContentPreparedEvent();
     }
     private void UpdateBackground(List<string> TagSequence)
     {
@@ -175,9 +175,6 @@ public class ObjectsPlacementController : MonoBehaviour
             spawnPos.x = spawnPos.x - (FocusLayer[FocusLayer.Count - 1].GetComponent<SceneObject>().Bounds.size.x / 2 
                     + AOController.GetObject(ObjectToPlace).GetComponent<SceneObject>().Bounds.size.x / 2);
 
-            Debug.Log(FocusLayer[FocusLayer.Count - 1].GetComponent<SceneObject>().Bounds.size.x / 2 + " + " + AOController.GetObject(ObjectToPlace).GetComponent<SceneObject>().Bounds.size.x / 2);
-
-
             var pointer = Instantiate(AOController.GetObject(ObjectToPlace), spawnPos, Quaternion.identity);
             FocusLayer.Add(pointer);
             SpawnedObjects.Add(ObjectToPlace);
@@ -222,5 +219,20 @@ public class ObjectsPlacementController : MonoBehaviour
         {
             Object.transform.parent = ParentGO.transform;
         }
+    }
+
+    public Vector3 GetBaseDetailPosition()
+    {
+        if (FocusLayer.Count == 0) { Debug.Log("zero objects in focus"); return Vector3.zero; }
+        //get action focus point
+
+        Vector3 result = Vector3.zero;
+        foreach (var FocusObject in FocusLayer)
+        {
+            result += FocusObject.transform.position;
+            result = result / (float) FocusLayer.Count; 
+        }
+
+        return result;
     }
 }
