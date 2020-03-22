@@ -31,6 +31,7 @@ public class ObjectsPlacementController : MonoBehaviour
     {
         SpawnedObjects = new List<string>();
         AOController = new AvailableObjectsController();
+        var DescriptionHandler = new ObjectsPlacementHandler();
 
         ParentGO = new GameObject();
         FrameDescription.OnDescriptionChangedEvent += PlacementHandle;
