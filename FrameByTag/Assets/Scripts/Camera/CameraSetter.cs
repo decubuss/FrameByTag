@@ -404,22 +404,22 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         //now you have half-height of screen
     }
 
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.yellow;
+    //private void OnDrawGizmos()
+    //{
+    //    Gizmos.color = Color.yellow;
 
-        //Gizmos.DrawSphere(LeftObjectsLimit, 0.1f);
-        //Gizmos.DrawSphere(RightObjectsLimit, 0.1f);
+    //    Gizmos.DrawSphere(LeftObjectsLimit, 0.1f);
+    //    Gizmos.DrawSphere(RightObjectsLimit, 0.1f);
 
-        //Gizmos.color = Color.blue;
-        //Gizmos.DrawSphere(Frame.LeftCorner, 0.1f);
-        //Gizmos.DrawSphere(Frame.RightCorner, 0.1f);
+    //    Gizmos.color = Color.blue;
+    //    Gizmos.DrawSphere(Frame.LeftCorner, 0.1f);
+    //    Gizmos.DrawSphere(Frame.RightCorner, 0.1f);
 
 
-        //var Center=
-        //Gizmos.DrawSphere()
+    //    var Center =
+    //    Gizmos.DrawSphere()
 
-    }
+    //}
 
     public Dictionary<string[], string> GetAlternateNames()
     {
@@ -428,7 +428,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         result.Add(new string[] { "center", "centered"}, "Center");
         result.Add(new string[] { "last third", "screen right" }, "LastThird");
 
-        result.Add(new string[] { "birds eye" }, "BirdsEye");
+        result.Add(new string[] { "birds eye", "from above" }, "BirdsEye");
         result.Add(new string[] { "high" }, "High");
         result.Add(new string[] { "eye level" }, "EyeLevel");
         result.Add(new string[] { "low" }, "Low");

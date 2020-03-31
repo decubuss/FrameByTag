@@ -1,13 +1,16 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
-public class SceneObject : MonoBehaviour
+public class SceneObject : MonoBehaviour, INameAlternatable
 {
     public string[] Keys;
     public string Name;
     string SceneObjectType;
     public string[] Poses;
+    public List<UnityEditor.Animations.ChildAnimatorState> States = new List<UnityEditor.Animations.ChildAnimatorState>();
+    private Animator Animator;
 
     private Bounds _bounds;
     public Bounds Bounds
@@ -60,11 +63,20 @@ public class SceneObject : MonoBehaviour
 
     public void Start()
     {
-        var AnimPointer = gameObject.GetComponent<Animator>();
-        if (AnimPointer != null)
-        {
-            AnimPointer.speed = 0f;
-            AnimPointer.PlayInFixedTime("Idle", 0, 0.0f);
+        Animator = gameObject.GetComponent<Animator>();
+        if (Animator != null)
+        { 
+            if(Animator.HasState(0, Animator.StringToHash("Idle")))
+            {
+                Animator.speed = 0f;
+                Animator.PlayInFixedTime("Idle", 0, 0.0f);
+            }
+       
+            var ac = gameObject.GetComponent<Animator>().runtimeAnimatorController as UnityEditor.Animations.AnimatorController;
+
+            UnityEditor.Animations.AnimatorStateMachine sm = ac.layers[0].stateMachine;
+            UnityEditor.Animations.ChildAnimatorState[] states = sm.states;
+            States = states.ToList();
         }
     }
 
@@ -78,4 +90,42 @@ public class SceneObject : MonoBehaviour
             return new Bounds();
     }
 
+    public Dictionary<string[],string> GetAlternateNames()
+    {
+        Dictionary<string[], string> result = new Dictionary<string[], string>();
+        result.Add(Keys, Name);
+
+        return result;//TODO
+    }
+    public List<string> GetStateNames()
+    {
+        if (States.Count != 0)
+        {
+            List<string> names = new List<string>();
+            foreach(var state in States)
+            {
+                names.Add(state.state.name);
+            }
+            return names;
+        }
+        else
+        {
+            return null;
+        }
+    }
+    public void SetStateByName(string name)
+    {
+        if (Animator != null && Animator.HasState(0, Animator.StringToHash(name)))
+        {
+            SetState(name);
+        }
+        else
+            Debug.LogError( string.Format("no animator on {0}", Name) );
+    }
+    private void SetState(string name)
+    {
+        if (Animator == null) { return; }
+        Animator.PlayInFixedTime(name, 0, 0.0f);
+    }
+    
 }

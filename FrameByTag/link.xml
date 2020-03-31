@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <assembly fullname="OpenNLP">
+    <type fullname="OpenNLP" preserve="all"/>
+    <type fullname="SharpEntropy" preserve="all"/>
+    <type fullname="SharpWordNet" preserve="all"/>
+  </assembly>
+</linker>
