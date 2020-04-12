@@ -5,83 +5,193 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 
-public class ObjectsPlacementController : MonoBehaviour
+public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
 {
 
     //need to store all objects, their states attributes and etc in a way they gotta be callable
     //and here goes functions between them or functions attached to single object
-    private GameObject ParentGO;
+
+    private AvailableObjectsController AOController;
 
     public List<GameObject> FocusLayer;
-    public Vector3 FocusTransform;
+    public List<GameObject> AdditiveLayer;
     public List<GameObject> BackgroundLayer;
     public GameObject GroundMesh;
 
-    private List<string> SpawnedObjects;
+    private Dictionary<ShotElement, GameObject> _lastShotElements;
 
-    private AvailableObjectsController AOController;
+    public Vector3 FocusTransform;
+
+    private List<string> SpawnedObjects;
 
     public delegate void OnContentPrepared();
     public static event OnContentPrepared OnContentPreparedEvent;
     public static event OnContentPrepared OnStartupEndedEvent;
 
-    //public delegate void OnStartupEnded();
-
+    public List<ShotElement> _lastExecutedElements;
+    public List<DescriptionTag> _lastExecutedTags;
     void Start()
     {
         SpawnedObjects = new List<string>();
         AOController = new AvailableObjectsController();
-        var DescriptionHandler = new ObjectsPlacementHandler();
+        _lastShotElements = new Dictionary<ShotElement, GameObject>();
+        var DescriptionHandler = new ObjectsPlacementHandler(AOController, this);
 
-        ParentGO = new GameObject();
-        FrameDescription.OnDescriptionChangedEvent += PlacementHandle;
+        //FrameDescription.OnDescriptionChangedEvent += PlacementHandle;
+        ObjectsPlacementHandler.OnSentenceProcessedEvent += BuildHandledScene;
 
         SceneDefaultContentSetup();
 
-        if (OnStartupEndedEvent != null)
-            OnStartupEndedEvent();
+        OnStartupEndedEvent?.Invoke();
     }
 
-    /// <summary>
-    /// Spawns default scene objects
-    /// </summary>
+   
     public void SceneDefaultContentSetup()
     {
         if (FocusLayer.Contains(AOController.GetObject("Dummy"))) { return; }
 
-        FocusLayerSpawn("Dummy");
+        SpawnFocusedObject(new ShotElement("Dummy", 1, HierarchyRank.InFocus, "Idle"));
     }
-
-    public void PlacementHandle(string Input)
+    private void BuildHandledScene(List<DescriptionTag> tags, List<ShotElement> elements)
     {
-        List<string> ResultSequence = Input.Split(' ').ToList<string>();
-
-        foreach (var AlternativeName in AOController.GetAlternateNames())
+        if (tags == null && elements == null)
         {
-            foreach (string AltName in AlternativeName.Key)
+            OnContentPreparedEvent?.Invoke();
+            return;
+        }
+        PrepareScene(tags, elements);
+    }
+    public void PrepareScene(List<DescriptionTag> tags,List<ShotElement> elements)
+    {
+        if (tags == _lastExecutedTags && elements == _lastExecutedElements )
+        {
+            OnContentPreparedEvent?.Invoke();
+            return;
+        }
+
+        int maxLayer = elements.Max(x => x.Layer);
+        for(int i = 0; i <= maxLayer;  i++)
+        {
+
+            var layerElements = elements.Where(x => x.Layer == i);
+            foreach (var element in layerElements)
             {
-                while (ResultSequence.Any(x => x == AltName) /*&& !TagSequence.Contains(AlternativeCalls.Value)*/)
+                if(_lastShotElements.Keys.FirstOrDefault(x => x.PropName == element.PropName) != null)
                 {
-                    ResultSequence[ResultSequence.FindIndex(ind => ind.Equals(AltName))] = AlternativeName.Value;
+                    var sceneElement = _lastShotElements.Keys.FirstOrDefault(x => x.PropName == element.PropName);
+                    ModifySceneObject(sceneElement, element);
+                }
+                else
+                {
+                    Debug.Log(string.Format("{0} {1} {2} {3}", element.Layer, element.PropName, element.Rank, element.State));
+                    switch (element.Rank)
+                    {
+                        case HierarchyRank.InFocus:
+                            SpawnFocusedObject(element);
+                            break;
+                        case HierarchyRank.Addition:
+                            SpawnAddition(element, tags);
+                            break;
+                        case HierarchyRank.Background:
+                            break;
+                    }
                 }
             }
         }
-        //TODO: each function finds actual keyword
-        //var ting = "";
-        //foreach (var str in words)
-        //{
-        //    ting += str + " ";
-        //}
-        //Debug.Log(ting);
 
-        UpdateBackground(ResultSequence);
-        UpdateSceneObjects(ResultSequence);
         if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
             SceneDefaultContentSetup();
 
-        if (OnContentPreparedEvent != null)
-            OnContentPreparedEvent();
+        _lastExecutedElements = elements;
+        _lastExecutedTags = tags;
+
+        OnContentPreparedEvent?.Invoke();
     }
+
+    private void SpawnFocusedObject(ShotElement element)
+    {
+        if (FocusLayer == null) { FocusLayer = new List<GameObject>(); }
+        var obj = AOController.GetObject(element.PropName);
+
+        if ( FocusLayer.FirstOrDefault( x => x.name == obj.name) == null) //&& ReferenceEquals( obj, FocusLayer.Select( x => x.name == obj.name) )
+        {
+            var sceneGO = Instantiate(obj);
+            if (sceneGO.GetComponent<SceneObject>().CurrentState != element.State)
+                sceneGO.GetComponent<SceneObject>().SetStateByName(element.State);
+            sceneGO.transform.position = FocusLayer.Count == 0 ? Vector3.zero : Vector3.one;//TODO: not one but calculated shit
+            sceneGO.name = obj.name;
+            _lastShotElements.Add(element, sceneGO);
+            FocusLayer.Add(sceneGO);
+        }
+
+    }
+    private void ModifySceneObject(ShotElement oldelement, ShotElement newelement)
+    {
+        var pointer = _lastShotElements[oldelement];
+        _lastShotElements.Remove(oldelement);
+        _lastShotElements.Add(newelement, pointer);
+        if(oldelement.State != newelement.State)
+            pointer.GetComponent<SceneObject>().SetStateByName(newelement.State);
+        if(oldelement.Rank != newelement.Rank) { }//TODO:
+        if(oldelement.Layer != newelement.Layer) { }//TODO:
+
+    }
+    private void SpawnAddition(ShotElement element,List<DescriptionTag> tags)
+    {
+        if (AdditiveLayer == null) { AdditiveLayer = new List<GameObject>(); }
+        int elementIndex = tags.FirstOrDefault(x => x.Tag == element.PropName).Index;
+
+        DescriptionTag relevantSpatial = tags.Where(x => x.Index < elementIndex
+                                           && x.Type == TagType.Spatial)
+                                  .OrderByDescending(x => x.Index)
+                                  .First();
+        var obj = AOController.GetObject(element.PropName);
+        var sceneGO = Instantiate(obj);
+        if (element.State != null)
+            sceneGO.GetComponent<SceneObject>().SetStateByName(element.State);
+        Transform transform = ApplySpatial(obj, relevantSpatial);
+        sceneGO.transform.position = transform.position;//TODO: not one but calculated shit
+        sceneGO.transform.rotation = transform.rotation;
+        AdditiveLayer.Add(sceneGO);
+
+    }
+    private void BackgroundSpawn(ShotElement element)
+    {
+
+    }
+    private Transform ApplySpatial(GameObject newObj, DescriptionTag spatial)
+    {
+        Transform result = newObj.transform;
+        var refObj = FocusLayer.Last();
+        Vector3 refPoint = refObj.transform.position;
+        Quaternion refQuat = refObj.transform.rotation;
+        //TODO: damn bro you gotta find a group attached to it
+        result.position = SpatialManage(spatial.Tag, refObj.GetComponent<SceneObject>(), newObj.GetComponent<SceneObject>()) + refPoint;
+        result.rotation = refQuat;
+        return result;
+    }
+    private Vector3 SpatialManage(string spatial, SceneObject go1, SceneObject go2)
+    {
+        switch (spatial)
+        {
+            case "By":
+                return -Vector3.forward * (go1.Bounds.size.z + go2.Bounds.size.z);
+                break;
+            case "Near":
+                return -Vector3.forward * (go1.Bounds.size.z + go2.Bounds.size.z) * 2;
+                break;
+            default:
+                return Vector3.zero;
+                break;
+        }
+    }
+    private void ApplyState(ShotElement element, GameObject objectOnScene)
+    {
+
+    }
+    
+
+    #region OldKingdom
     private void UpdateBackground(List<string> TagSequence)
     {
         TagSequence.ToArray();
@@ -107,7 +217,6 @@ public class ObjectsPlacementController : MonoBehaviour
             }
         }
     }
-
     public void ClearScene()
     {
         if(FocusLayer.Count == 0) { return; }
@@ -116,7 +225,6 @@ public class ObjectsPlacementController : MonoBehaviour
             Destroy(FObject);
         }
     }
-    
     public void UpdateScene()
     {
         if (FocusLayer.Count == 0) { return; } //temporary
@@ -125,7 +233,6 @@ public class ObjectsPlacementController : MonoBehaviour
             Destroy(FObject);
         }
     }
-
     public void UpdateSceneObjects(List<string> RequestedObjectsList)
     {
         if(SpawnedObjects.Count == 0)
@@ -158,7 +265,6 @@ public class ObjectsPlacementController : MonoBehaviour
         }
 
     }
-
     private void FocusLayerSpawn(string ObjectToPlace)
     {
         if(AOController == null || AOController.GetObject(ObjectToPlace) == null) { return; }
@@ -182,8 +288,19 @@ public class ObjectsPlacementController : MonoBehaviour
         }
         
     }
+    //generally spatial prepositions
+    public Dictionary<string, string> GetAlternateNames()
+    {
+        var initialDict = new Dictionary<string[], string>
+        {
+            { new string[] { "beside", "nearby", "by", "by the" }, "By" },
+            { new string[] { "at the background", "as the background", "as background" }, "Background" },
+            { new string[] { "at the", "in the", "in"}, "In" }
+        };
 
-
+        var result = Helper.DictBreakDown(initialDict);
+        return result;
+    }
     private GameObject FindSceneObjectByName(string name)
     {
         //PrefabUtility.GetCorrespondingObjectFromSource(FObject).name == name ||
@@ -204,24 +321,13 @@ public class ObjectsPlacementController : MonoBehaviour
 
         return null;
     }
-
     private void RemoveSceneObject(string name)
     {
         var pointer = FindSceneObjectByName(name);
         FocusLayer.Remove(pointer);
         Destroy(pointer);
     }
-
-    public void GroupFObjects()
-    {
-        //ParentGO.transform.position = new Vector3(Frame.CenterOfFrame.x, 0, Frame.CenterOfFrame.z);
-
-        foreach (var Object in FocusLayer)
-        {
-            Object.transform.parent = ParentGO.transform;
-        }
-    }
-
+    
     public Vector3 GetBaseDetailPosition()
     {
         if (FocusLayer.Count == 0) { Debug.Log("zero objects in focus"); return Vector3.zero; }
@@ -236,4 +342,5 @@ public class ObjectsPlacementController : MonoBehaviour
 
         return result;
     }
+    #endregion
 }

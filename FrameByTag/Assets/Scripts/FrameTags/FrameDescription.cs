@@ -8,48 +8,32 @@ using UnityEngine.UI;
 
 public class FrameDescription : MonoBehaviour
 {
-    // Start is called before the first frame update
-    private string RawFrameInput;
-    
+    public static FrameDescription instance;
     public InputField DescriptionSource;
 
-    [HideInInspector]
-    public ObjectsPlacementController PlacementController;
+    public static string RawFrameInput;
 
     public delegate void OnDescriptionChangeDelegate(string Input);
     public static event OnDescriptionChangeDelegate OnDescriptionChangedEvent;
 
     void Start()
     {
-        PlacementController = FindObjectOfType<ObjectsPlacementController>();
 
         if (DescriptionSource == null)
         {
             DescriptionSource = GameObject.Find("DescriptionField").GetComponent<InputField>();
         }
-
-        //TODO:subscribe on both of them to collect actual tags to store them if needed
-        //OR 
-        //make an entire class up for serialization needs
     }
 
     public void OnInputEnter()
     {
         //TODO: MINOR - make cursor stand there after enter
-        if (DescriptionSource.text != "" && DescriptionSource.text != this.RawFrameInput)
+        if (DescriptionSource.text != "" && DescriptionSource.text != RawFrameInput)
         {
-            
             RawFrameInput = DescriptionSource.text;
 
-            if (OnDescriptionChangedEvent != null)
-                OnDescriptionChangedEvent(RawFrameInput);
-            
+            OnDescriptionChangedEvent?.Invoke(RawFrameInput);
         }
     }
-
-    private void ScreenplayLocation(string framedescription)
-    {
-
-    }
-    
+  
 }

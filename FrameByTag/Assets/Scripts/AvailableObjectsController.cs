@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 
 
+
 public class AvailableObjectsController : INameAlternatable
 {
     public List<GameObject> AvailableObjects = new List<GameObject>();
@@ -24,21 +25,7 @@ public class AvailableObjectsController : INameAlternatable
         //TODO: add an object, attach SceneObject to it, set name and altranatives. Name of poses if needed
     }
 
-    public Dictionary<string[], string> GetAlternateNames()
-    {
-        if(AvailableObjects.Count == 0) { Debug.Log("No available objects"); return null; }
-
-        var Result = new Dictionary<string[], string>();
-        foreach (var AvblObj in AvailableObjects)
-        {
-            if(AvblObj.GetComponent<SceneObject>() != null)
-                Result.Add(AvblObj.GetComponent<SceneObject>().Keys, AvblObj.GetComponent<SceneObject>().Name);
-        }
-        return Result;
-
-        
-    }
-    public Dictionary<string,string> GetAltNames()
+    public Dictionary<string,string> GetAlternateNames()
     {
         var result = new Dictionary<string, string>();
         foreach (var AvblObj in AvailableObjects)
@@ -46,12 +33,11 @@ public class AvailableObjectsController : INameAlternatable
             var sceneObjComponent = AvblObj.GetComponent<SceneObject>();
             if (sceneObjComponent != null)
             {
-                foreach (var key in sceneObjComponent.Keys)
+                foreach (var item in sceneObjComponent.GetAlternateNames())
                 {
-                    result.Add(key, sceneObjComponent.Name);
+                    result.Add(item.Key,item.Value);
                 }
             }
-            //foreach(var key in AvblObj.)
         }
 
         return result;
@@ -60,12 +46,7 @@ public class AvailableObjectsController : INameAlternatable
     {
 
         //TODO: serialize already downloaded and check if anything unserialized is here
-        var Result = new List<GameObject>();
-
-        //foreach (var ImportedObject in Resources.LoadAll("Dummy", typeof(GameObject)))
-        //{
-        //    Result.Add((GameObject)ImportedObject);
-        //}
+        var availableObjects = new List<GameObject>();
 
         DirectoryInfo resourcesPath = new DirectoryInfo(Application.dataPath + @"\Resources");
         FileInfo[] fileInfo = resourcesPath.GetFiles("*.prefab", SearchOption.AllDirectories);
@@ -74,21 +55,25 @@ public class AvailableObjectsController : INameAlternatable
         {
             string objectToLoad = file.Name.Replace(".prefab", "");
             Object loadedObject = Resources.Load(objectToLoad, typeof(GameObject));
-            Result.Add((GameObject)loadedObject);
-            Debug.Log(loadedObject.name);
+            availableObjects.Add((GameObject)loadedObject);
+            //Debug.Log(loadedObject.name);
         }
 
-        return Result;
+        return availableObjects;
     }
 
-    public GameObject GetObject(string Name)
+    public GameObject GetObject(string name)
     {
         if (AvailableObjects.Count == 0) { Debug.LogError("No objects available smh");  return new GameObject(); }
 
-        if (AvailableObjects.FirstOrDefault(x => x.name == Name))
-            return AvailableObjects.FirstOrDefault(x => x.name == Name);
+        if (AvailableObjects.FirstOrDefault(x => x.name == name))
+            return AvailableObjects.FirstOrDefault(x => x.name == name);
         else
             return null;
+    }
+    public SceneObject GetSceneObject(string name)
+    {
+        return this.GetObject(name).GetComponent<SceneObject>();
     }
 
     private void ObjectInitialization()

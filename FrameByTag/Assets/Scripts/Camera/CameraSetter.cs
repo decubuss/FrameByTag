@@ -7,7 +7,9 @@ using UnityEngine;
 
 public class CameraSetter : MonoBehaviour, INameAlternatable
 {
-    private enum ShotType
+    //public static CameraSetter instance;
+
+    public enum ShotType
     {
         LongShot, CloseShot, MediumShot, ExtremelyLongShot, DefaultShot
     }
@@ -58,7 +60,10 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         //ObjectsPlacementController.OnSpawnedObjectsChange += ShotOptionsHandle;
         FrameDescription.OnDescriptionChangedEvent += ShotOptionsHandle;
     }
-
+    public ShotParameters GetShotParameters()
+    {
+        return new ShotParameters(Shot, _horizontalAngle, _verticalAngle, _third);
+    }
     private void StartupShot()
     {
         Shot = ShotType.DefaultShot;
@@ -75,16 +80,13 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         ObjectsPlacementController.OnContentPreparedEvent += UpdateCameraTransform;
         _baseDetail.UpdatePosition();
 
-        var Keywords = GetAlternateNames();
+        var ShotOptionNames = GetAlternateNames();
         var processedInput = input.ToLower();
-        foreach (var Keyword in Keywords)
+        foreach (var Option in ShotOptionNames)
         {
-            foreach(string AltName in Keyword.Key)
+            if (input.Contains(Option.Key))
             {
-                if (input.Contains(AltName))
-                {
-                    processedInput = processedInput.Replace(AltName, Keyword.Value);
-                }
+                processedInput = processedInput.Replace(Option.Key, Option.Value);
             }
         }
 
@@ -403,47 +405,34 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         //put a middle dot down, then ray to center of viewtoworld point
         //now you have half-height of screen
     }
-
-    //private void OnDrawGizmos()
-    //{
-    //    Gizmos.color = Color.yellow;
-
-    //    Gizmos.DrawSphere(LeftObjectsLimit, 0.1f);
-    //    Gizmos.DrawSphere(RightObjectsLimit, 0.1f);
-
-    //    Gizmos.color = Color.blue;
-    //    Gizmos.DrawSphere(Frame.LeftCorner, 0.1f);
-    //    Gizmos.DrawSphere(Frame.RightCorner, 0.1f);
-
-
-    //    var Center =
-    //    Gizmos.DrawSphere()
-
-    //}
-
-    public Dictionary<string[], string> GetAlternateNames()
+    public Dictionary<string, string> GetAlternateNames()
     {
-        var result = new Dictionary<string[], string>();
-        result.Add(new string[] { "first third", "screen left"}, "FirstThird");
-        result.Add(new string[] { "center", "centered"}, "Center");
-        result.Add(new string[] { "last third", "screen right" }, "LastThird");
+        var dict = new Dictionary<string[], string>
+        {
+            { new string[] { "first third", "screen left" }, "FirstThird" },
+            { new string[] { "center", "centered" }, "Center" },
+            { new string[] { "last third", "screen right" }, "LastThird" },
 
-        result.Add(new string[] { "birds eye", "from above" }, "BirdsEye");
-        result.Add(new string[] { "high" }, "High");
-        result.Add(new string[] { "eye level" }, "EyeLevel");
-        result.Add(new string[] { "low" }, "Low");
-        result.Add(new string[] { "mouse eye" }, "MouseEye");
+            { new string[] { "birds eye", "from above" }, "BirdsEye" },
+            { new string[] { "high" }, "High" },
+            { new string[] { "eye level" }, "EyeLevel" },
+            { new string[] { "low" }, "Low" },
+            { new string[] { "mouse eye" }, "MouseEye" },
 
-        result.Add(new string[] { "front" }, "Front");
-        result.Add(new string[] { "dead front" }, "DeadFront");
-        result.Add(new string[] { "right angle" }, "RightAngle");
-        result.Add(new string[] { "left angle" }, "LeftAngle");
+            { new string[] { "front" }, "Front" },
+            { new string[] { "dead front" }, "DeadFront" },
+            { new string[] { "right angle" }, "RightAngle" },
+            { new string[] { "left angle" }, "LeftAngle" },
 
-        result.Add(new string[] { "long shot", "ls", "full shot" }, "LongShot");
-        result.Add(new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot");
-        result.Add(new string[] { "large shot", "open shot", "really long shot"}, "ExtremelyLongShot");
+            { new string[] { "long shot", "ls", "full shot" }, "LongShot" },
+            { new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot" },
+            { new string[] { "large shot", "open shot", "really long shot" }, "ExtremelyLongShot" }
+        };
+
+        var result = Helper.DictBreakDown(dict);
         return result;
     }
+
 
     public void UpdateCameraTransform()
     {
@@ -461,6 +450,17 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         ApplyVAngle(_verticalAngle);
 
         ObjectsPlacementController.OnContentPreparedEvent -= UpdateCameraTransform;
+    }
+    public void UpdateCameraTransform(ShotParameters shotParameters)
+    {
+        if (shotParameters.ShotType == ShotType.DefaultShot)
+            DefaultShot();
+        else
+            this.SendMessage(shotParameters.ShotType.ToString());
+
+        ApplyThird(shotParameters.Third);
+        ApplyHAngle(shotParameters.HAngle);
+        ApplyVAngle(shotParameters.VAngle);
     }
 
     #region shots
@@ -534,10 +534,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     //but if it is unique, that means these objects gotta be created by someone 
     #endregion
 
-
-
-
-
+     
     
      /*private void ApplyThird(HorizontalThird third)
     {

@@ -5,12 +5,26 @@ using System.Linq;
 
 public class SceneObject : MonoBehaviour, INameAlternatable
 {
-    public string[] Keys;
-    public string Name;
     string SceneObjectType;
     public string[] Poses;
-    public List<UnityEditor.Animations.ChildAnimatorState> States = new List<UnityEditor.Animations.ChildAnimatorState>();
+    [SerializeField]
+    public string CurrentState;
+    private List<UnityEditor.Animations.ChildAnimatorState> States = new List<UnityEditor.Animations.ChildAnimatorState>();
     private Animator Animator;
+
+    public string[] Keys;
+    private string _name;
+    public string Name;
+    //{
+    //    get
+    //    {
+    //        return _name;
+    //    }
+    //    set
+    //    {
+    //        _name = value.Replace(" ", "");
+    //    }
+    //}
 
     private Bounds _bounds;
     public Bounds Bounds
@@ -26,7 +40,6 @@ public class SceneObject : MonoBehaviour, INameAlternatable
             {
                 return _bounds;
             }
-                
         }
 
     }
@@ -61,9 +74,21 @@ public class SceneObject : MonoBehaviour, INameAlternatable
         }
     }
 
+
+
     public void Start()
     {
         Animator = gameObject.GetComponent<Animator>();
+        if(Name.Contains(" ") || char.IsUpper( Name.First()))//TODO: insert it in Name.set
+        {
+            var parts = Name.Split(' ');
+            Name = "";
+            for(int i = 0; i < parts.Length; i++)
+            {
+                parts[i] = char.ToUpper(parts[i].First()) + parts[i].Remove(0, 1);
+                Name += parts[i];
+            }
+        }
         if (Animator != null)
         { 
             if(Animator.HasState(0, Animator.StringToHash("Idle")))
@@ -89,17 +114,27 @@ public class SceneObject : MonoBehaviour, INameAlternatable
         else
             return new Bounds();
     }
-
-    public Dictionary<string[],string> GetAlternateNames()
+    public bool HasState(string name)
     {
-        Dictionary<string[], string> result = new Dictionary<string[], string>();
-        result.Add(Keys, Name);
+        if (Animator != null)
+        {
+            return Animator.HasState(0, Animator.StringToHash(name));
+        }
+        return false;
+    }
+    public Dictionary<string,string> GetAlternateNames()
+    {
+        Dictionary<string, string> result = new Dictionary<string, string>();
+        foreach(var key in Keys.OrderByDescending(x => x.Length))
+        {
+            result.Add(key, Name);
+        }
 
         return result;//TODO
     }
     public List<string> GetStateNames()
     {
-        if (States.Count != 0)
+        if (Animator != null && States.Count != 0)
         {
             List<string> names = new List<string>();
             foreach(var state in States)
@@ -113,10 +148,17 @@ public class SceneObject : MonoBehaviour, INameAlternatable
             return null;
         }
     }
+
     public void SetStateByName(string name)
     {
-        if (Animator != null && Animator.HasState(0, Animator.StringToHash(name)))
+        string stateName = ""; //TODO: LemmatizeName 
+        if (Animator != null )
         {
+            SetState(name);
+        }
+        else if(gameObject.GetComponent<Animator>())
+        {
+            Animator = gameObject.GetComponent<Animator>();
             SetState(name);
         }
         else
@@ -125,7 +167,13 @@ public class SceneObject : MonoBehaviour, INameAlternatable
     private void SetState(string name)
     {
         if (Animator == null) { return; }
+        if( !Animator.HasState(0, Animator.StringToHash(name))) 
+        { 
+            Debug.LogError(string.Format("no such state:{0}", name)); 
+            return; 
+        }
         Animator.PlayInFixedTime(name, 0, 0.0f);
+        CurrentState = name;
     }
     
 }
