@@ -48,15 +48,25 @@ public class AvailableObjectsController : INameAlternatable
         //TODO: serialize already downloaded and check if anything unserialized is here
         var availableObjects = new List<GameObject>();
 
-        DirectoryInfo resourcesPath = new DirectoryInfo(Application.dataPath + @"\Resources");
-        FileInfo[] fileInfo = resourcesPath.GetFiles("*.prefab", SearchOption.AllDirectories);
+        //DirectoryInfo resourcesPath = new DirectoryInfo(Application.dataPath + @"\Resources");
+        //FileInfo[] fileInfo = resourcesPath.GetFiles("*.prefab", SearchOption.AllDirectories);
 
-        foreach (FileInfo file in fileInfo)
+        //foreach (FileInfo file in fileInfo)
+        //{
+        //    string objectToLoad = file.Name.Replace(".prefab", "");
+        //    Object loadedObject = Resources.Load(objectToLoad, typeof(GameObject));
+        //    availableObjects.Add((GameObject)loadedObject);
+        //    //Debug.Log(loadedObject.name);
+        //}
+
+
+        foreach(var downld in Resources.LoadAll("Prefabs"))
         {
-            string objectToLoad = file.Name.Replace(".prefab", "");
-            Object loadedObject = Resources.Load(objectToLoad, typeof(GameObject));
-            availableObjects.Add((GameObject)loadedObject);
-            //Debug.Log(loadedObject.name);
+            GameObject go = (GameObject)downld;
+            if (go.GetComponent<SceneObject>())
+            {
+                availableObjects.Add(go);
+            }
         }
 
         return availableObjects;
@@ -64,12 +74,15 @@ public class AvailableObjectsController : INameAlternatable
 
     public GameObject GetObject(string name)
     {
-        if (AvailableObjects.Count == 0) { Debug.LogError("No objects available smh");  return new GameObject(); }
+        if (AvailableObjects.Count == 0) { Debug.LogError("No objects available smh"); return new GameObject(); }
 
         if (AvailableObjects.FirstOrDefault(x => x.name == name))
             return AvailableObjects.FirstOrDefault(x => x.name == name);
         else
+        {
+            Debug.LogError("no object with name " + name);
             return null;
+        }
     }
     public SceneObject GetSceneObject(string name)
     {

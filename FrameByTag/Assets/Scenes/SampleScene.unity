@@ -481,6 +481,7 @@ RectTransform:
   m_Children:
   - {fileID: 1885615169}
   - {fileID: 1399165324}
+  - {fileID: 532725536}
   m_Father: {fileID: 1165648618}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -581,12 +582,12 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1942703694}
-  m_Father: {fileID: 1165648618}
+  m_Father: {fileID: 476130835}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 837.5, y: -20}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 60, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &532725537
@@ -947,7 +948,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 3.614983e+12, y: 4.3973276e+21, z: 254211710, w: 1.3592357e-19}
+  m_BoundingSphereOverride: {x: -11, y: 7, z: 1.5e-44, w: 0}
   m_UseBoundingSphereOverride: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
@@ -1976,7 +1977,6 @@ RectTransform:
   m_Children:
   - {fileID: 476130835}
   - {fileID: 1221307099}
-  - {fileID: 532725536}
   m_Father: {fileID: 631075596}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3531,6 +3531,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CurrentCamera: {fileID: 0}
+  _third: 0
+  _horizontalAngle: 0
+  _verticalAngle: 0
 --- !u!114 &1894941940
 MonoBehaviour:
   m_ObjectHideFlags: 0

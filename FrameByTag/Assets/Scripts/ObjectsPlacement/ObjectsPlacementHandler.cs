@@ -135,6 +135,16 @@ public class ObjectsPlacementHandler
     }
     private void HandleRelations(string input, ref List<ShotElement> elements)
     {
+        //Debug.Log(input);
+        //string[] parts = input.Split(' ');
+        //for(int i = 0; i < parts.Length; i++)
+        //{
+        //    if (parts[i] == ",")
+        //    {
+        //        i++;
+        //    }
+
+        //}
         foreach(var element in elements)
         {
             element.Rank = element.Rank == HierarchyRank.Default ? HierarchyRank.Addition : element.Rank;

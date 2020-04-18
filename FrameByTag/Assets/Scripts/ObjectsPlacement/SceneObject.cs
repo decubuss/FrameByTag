@@ -9,7 +9,6 @@ public class SceneObject : MonoBehaviour, INameAlternatable
     public string[] Poses;
     [SerializeField]
     public string CurrentState;
-    private List<UnityEditor.Animations.ChildAnimatorState> States = new List<UnityEditor.Animations.ChildAnimatorState>();
     private Animator Animator;
 
     public string[] Keys;
@@ -97,11 +96,11 @@ public class SceneObject : MonoBehaviour, INameAlternatable
                 Animator.PlayInFixedTime("Idle", 0, 0.0f);
             }
        
-            var ac = gameObject.GetComponent<Animator>().runtimeAnimatorController as UnityEditor.Animations.AnimatorController;
+            //var ac = gameObject.GetComponent<Animator>().runtimeAnimatorController as UnityEditor.Animations.AnimatorController;
 
-            UnityEditor.Animations.AnimatorStateMachine sm = ac.layers[0].stateMachine;
-            UnityEditor.Animations.ChildAnimatorState[] states = sm.states;
-            States = states.ToList();
+            //UnityEditor.Animations.AnimatorStateMachine sm = ac.layers[0].stateMachine;
+            //UnityEditor.Animations.ChildAnimatorState[] states = sm.states;
+            //States = states.ToList();
         }
     }
 
@@ -134,14 +133,10 @@ public class SceneObject : MonoBehaviour, INameAlternatable
     }
     public List<string> GetStateNames()
     {
-        if (Animator != null && States.Count != 0)
+        if (Animator != null)
         {
-            List<string> names = new List<string>();
-            foreach(var state in States)
-            {
-                names.Add(state.state.name);
-            }
-            return names;
+            //TODO: return string
+            return null;
         }
         else
         {

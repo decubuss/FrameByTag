@@ -34,7 +34,7 @@ public class FrameSequenceController : MonoBehaviour
     {
         Frame frame = FrameSequence[index];
         OPController.PrepareScene(frame.DescriptionTags, frame.ShotElements);
-        CameraSetter.UpdateCameraTransform(frame.ShotParameters);
+        CameraSetter.ExecuteParameters(frame.ShotParameters);
         CurrentFrame = frame;
     }
     public void UpdateFrame(int index)

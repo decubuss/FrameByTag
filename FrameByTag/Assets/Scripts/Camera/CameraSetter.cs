@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 
 
-public class CameraSetter : MonoBehaviour, INameAlternatable
+public class CameraSetter : MonoBehaviour
 {
     //public static CameraSetter instance;
 
@@ -13,7 +13,6 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     {
         LongShot, CloseShot, MediumShot, ExtremelyLongShot, DefaultShot
     }
-
     public enum HorizontalThird
     {
         FirstThird, Center, LastThird, Auto
@@ -33,7 +32,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     [HideInInspector]
     public Camera CurrentCamera;
     private ObjectsPlacementController ObjectsController;
-
+    private CameraParametersHandler CPHandler;
     private FrameAttributes Frame;
 
     private Vector3 RightObjectsLimit;//
@@ -42,8 +41,11 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     private ShotType Shot;
     private Vector3 ShotInitialPos;
 
+    [SerializeField]
     private HorizontalThird _third;
+    [SerializeField]
     private HorizontalAngle _horizontalAngle;
+    [SerializeField]
     private VerticalAngle _verticalAngle;
 
     // Start is called before the first frame update
@@ -51,6 +53,7 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
     {
         Frame = new FrameAttributes();
         ObjectsController = FindObjectOfType<ObjectsPlacementController>();
+        CPHandler = new CameraParametersHandler(this);
         CurrentCamera = Camera.main;
         _baseDetail = new GameObject("BaseDetail").AddComponent<BaseDetail>();
 
@@ -58,7 +61,8 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         ObjectsPlacementController.OnStartupEndedEvent += StartupShot;
 
         //ObjectsPlacementController.OnSpawnedObjectsChange += ShotOptionsHandle;
-        FrameDescription.OnDescriptionChangedEvent += ShotOptionsHandle;
+        FrameDescription.OnDescriptionChangedEvent += CameraSetReady;
+        //CameraParametersHandler.OnParametersCollectedEvent += UpdateCameraTransform;
     }
     public ShotParameters GetShotParameters()
     {
@@ -71,52 +75,15 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         _verticalAngle = VerticalAngle.EyeLevel;
         _horizontalAngle = HorizontalAngle.Front;
 
-        UpdateCameraTransform();
+        //BuildNewShot();
+        ExecuteParameters(CPHandler.DefaultParams);
         ObjectsPlacementController.OnStartupEndedEvent -= StartupShot;
     }
 
-    private void ShotOptionsHandle(string input)
+    private void CameraSetReady(string input)
     {
-        ObjectsPlacementController.OnContentPreparedEvent += UpdateCameraTransform;
+        ObjectsPlacementController.OnContentPreparedEvent += BuildNewShot;
         _baseDetail.UpdatePosition();
-
-        var ShotOptionNames = GetAlternateNames();
-        var processedInput = input.ToLower();
-        foreach (var Option in ShotOptionNames)
-        {
-            if (input.Contains(Option.Key))
-            {
-                processedInput = processedInput.Replace(Option.Key, Option.Value);
-            }
-        }
-
-        foreach (var ShotType in Enum.GetValues(typeof(ShotType)).Cast<ShotType>())
-        {
-            if (processedInput.Contains(ShotType.ToString()))
-                this.Shot = ShotType;//TODO: make apply for a shotype as thirds
-            //this.SendMessage(AlternativeCalls.Value);
-        }
-
-        foreach (var ThirdType in Enum.GetValues(typeof(HorizontalThird)).Cast<HorizontalThird>() )
-        {
-            if (processedInput.Contains(ThirdType.ToString()))
-                this._third = ThirdType;
-
-        }
-
-        foreach (var HorizontalAngle in Enum.GetValues(typeof(HorizontalAngle)).Cast<HorizontalAngle>())
-        {
-            if (processedInput.Contains(HorizontalAngle.ToString()))
-                this._horizontalAngle = HorizontalAngle;
-        }
-
-        foreach (var VerticalAngle in Enum.GetValues(typeof(VerticalAngle)).Cast<VerticalAngle>())
-        {
-            if (processedInput.Contains(VerticalAngle.ToString()))
-                this._verticalAngle = VerticalAngle;
-        }
-        //define shot type here based on objects given from objects placer
-
     }
 
     private void DefaultShot(float springArmLenCoef = 0.37f)
@@ -125,9 +92,6 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         CurrentCamera.transform.rotation = CalculateCameraRotation(Frame.CenterOfFrame);
         ShotInitialPos = CurrentCamera.transform.position;
     }
-
-    
-
     private void ApplyThird(HorizontalThird third)
     {
         var thirdsGO = CurrentCamera.transform.Find("Thirds");
@@ -231,7 +195,6 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         //Debug.Log(debugline);
         _baseDetail.transform.rotation = CalculatedRot;
     }
-
     private Vector3 CalculateCameraPosition(float springArmCoef)
     {
         Frame.CenterOfFrame = CalculateCenterOfFrame();
@@ -367,8 +330,6 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         return maxHeight;
     }
     #endregion
-
-
     private void CalcFocusedObjectsBounds()
     {
         CalcFrameBounds();
@@ -405,53 +366,14 @@ public class CameraSetter : MonoBehaviour, INameAlternatable
         //put a middle dot down, then ray to center of viewtoworld point
         //now you have half-height of screen
     }
-    public Dictionary<string, string> GetAlternateNames()
+
+    public void BuildNewShot()
     {
-        var dict = new Dictionary<string[], string>
-        {
-            { new string[] { "first third", "screen left" }, "FirstThird" },
-            { new string[] { "center", "centered" }, "Center" },
-            { new string[] { "last third", "screen right" }, "LastThird" },
+        var shotParameters = CPHandler.ShotOptionsHandle(FrameDescription.RawFrameInput);
 
-            { new string[] { "birds eye", "from above" }, "BirdsEye" },
-            { new string[] { "high" }, "High" },
-            { new string[] { "eye level" }, "EyeLevel" },
-            { new string[] { "low" }, "Low" },
-            { new string[] { "mouse eye" }, "MouseEye" },
-
-            { new string[] { "front" }, "Front" },
-            { new string[] { "dead front" }, "DeadFront" },
-            { new string[] { "right angle" }, "RightAngle" },
-            { new string[] { "left angle" }, "LeftAngle" },
-
-            { new string[] { "long shot", "ls", "full shot" }, "LongShot" },
-            { new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot" },
-            { new string[] { "large shot", "open shot", "really long shot" }, "ExtremelyLongShot" }
-        };
-
-        var result = Helper.DictBreakDown(dict);
-        return result;
+        ExecuteParameters(shotParameters);
     }
-
-
-    public void UpdateCameraTransform()
-    {
-        //TODO: make switch which takes enum value and focus object, makes new shot variation
-        //TODO: get shot type by objects compos
-        //but for now lets just use previous type by default
-
-        if (Shot == ShotType.DefaultShot)
-            DefaultShot();
-        else
-            this.SendMessage(Shot.ToString());
-
-        ApplyThird(_third);
-        ApplyHAngle(_horizontalAngle);
-        ApplyVAngle(_verticalAngle);
-
-        ObjectsPlacementController.OnContentPreparedEvent -= UpdateCameraTransform;
-    }
-    public void UpdateCameraTransform(ShotParameters shotParameters)
+    public void ExecuteParameters(ShotParameters shotParameters)
     {
         if (shotParameters.ShotType == ShotType.DefaultShot)
             DefaultShot();

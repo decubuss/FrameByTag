@@ -37,7 +37,7 @@ public static class Helper
     public static string ExcludeCameraTags(string input)
     {
         string result = input;
-        foreach (var tag in DictSortByLength(CameraParametersHandler.CameraParameters))
+        foreach (var tag in DictSortByLength(CameraParametersHandler.CameraParametersAltNames))
         {
             if (result.Contains(" " + tag.Key))
                 result = result.Replace(" " + tag.Key, "");

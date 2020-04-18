@@ -38,7 +38,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         var DescriptionHandler = new ObjectsPlacementHandler(AOController, this);
 
         //FrameDescription.OnDescriptionChangedEvent += PlacementHandle;
-        ObjectsPlacementHandler.OnSentenceProcessedEvent += BuildHandledScene;
+        ObjectsPlacementHandler.OnSentenceProcessedEvent += SceneDescriptionSetup;
 
         SceneDefaultContentSetup();
 
@@ -52,7 +52,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
 
         SpawnFocusedObject(new ShotElement("Dummy", 1, HierarchyRank.InFocus, "Idle"));
     }
-    private void BuildHandledScene(List<DescriptionTag> tags, List<ShotElement> elements)
+    private void SceneDescriptionSetup(List<DescriptionTag> tags, List<ShotElement> elements)
     {
         if (tags == null && elements == null)
         {
@@ -61,12 +61,17 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         }
         PrepareScene(tags, elements);
     }
+
     public void PrepareScene(List<DescriptionTag> tags,List<ShotElement> elements)
     {
         if (tags == _lastExecutedTags && elements == _lastExecutedElements )
         {
             OnContentPreparedEvent?.Invoke();
             return;
+        }
+        else
+        {
+            ClearScene();
         }
 
         int maxLayer = elements.Max(x => x.Layer);
@@ -106,6 +111,15 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         _lastExecutedTags = tags;
 
         OnContentPreparedEvent?.Invoke();
+    }
+    private void ClearScene()
+    {
+        if (FocusLayer.Count == 0) { return; }
+        foreach (var FObject in FocusLayer)
+        {
+            Destroy(FObject);
+        }
+        FocusLayer = new List<GameObject>();
     }
 
     private void SpawnFocusedObject(ShotElement element)
@@ -215,14 +229,6 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
 
                 }
             }
-        }
-    }
-    public void ClearScene()
-    {
-        if(FocusLayer.Count == 0) { return; }
-        foreach(var FObject in FocusLayer)
-        {
-            Destroy(FObject);
         }
     }
     public void UpdateScene()
