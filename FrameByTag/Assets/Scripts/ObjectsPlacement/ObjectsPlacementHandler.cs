@@ -47,6 +47,8 @@ public class ObjectsPlacementHandler
             var input = Regex.Replace(_lastProcessedInput, @"[!?.]+", "");
         input = AddSpaces(input).ToLower();
 
+        //TODO: add dictionary <descriptiontags,elements>
+        var ItemTag = new Dictionary<DescriptionTag, ShotElement>();
         var Elements = new List<ShotElement>();
         var SceneSequence = new List<DescriptionTag>();
         var processedInput = HandleItem(input, ref Elements, ref SceneSequence);

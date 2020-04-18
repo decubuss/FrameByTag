@@ -71,7 +71,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         }
         else
         {
-            ClearScene();
+            //ClearScene();
         }
 
         int maxLayer = elements.Max(x => x.Layer);
