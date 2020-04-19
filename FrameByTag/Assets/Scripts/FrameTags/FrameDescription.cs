@@ -28,7 +28,7 @@ public class FrameDescription : MonoBehaviour
     public void OnInputEnter()
     {
         //TODO: MINOR - make cursor stand there after enter
-        if (DescriptionSource.text != "" && DescriptionSource.text != RawFrameInput)
+        if (!string.IsNullOrWhiteSpace(DescriptionSource.text) && DescriptionSource.text != RawFrameInput)
         {
             RawFrameInput = DescriptionSource.text;
 

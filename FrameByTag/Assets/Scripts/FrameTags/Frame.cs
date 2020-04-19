@@ -5,15 +5,13 @@ using UnityEngine;
 public struct Frame
 {
     public ShotParameters ShotParameters;
-    public List<ShotElement> ShotElements;
-    public List<DescriptionTag> DescriptionTags;
+    public Dictionary<DescriptionTag, ShotElement> TagItemDict;
     public string Description;
 
-    public Frame(ShotParameters shotParameters, List<ShotElement> shotElements, List<DescriptionTag> descriptionTags,string description)
+    public Frame(ShotParameters shotParameters, Dictionary<DescriptionTag, ShotElement> tagItemDict, string description)
     {
         ShotParameters = shotParameters;
-        ShotElements = shotElements;
-        DescriptionTags = descriptionTags;
+        TagItemDict = tagItemDict;
         Description = description;
     }
 }

@@ -12,7 +12,6 @@ public class SceneObject : MonoBehaviour, INameAlternatable
     private Animator Animator;
 
     public string[] Keys;
-    private string _name;
     public string Name;
     //{
     //    get
@@ -24,7 +23,7 @@ public class SceneObject : MonoBehaviour, INameAlternatable
     //        _name = value.Replace(" ", "");
     //    }
     //}
-
+    [SerializeField]
     private Bounds _bounds;
     public Bounds Bounds
     {
@@ -33,6 +32,7 @@ public class SceneObject : MonoBehaviour, INameAlternatable
             if (_bounds == new Bounds(Vector3.zero, Vector3.zero))
             {
                 _bounds = GetObjectBounds();
+                
                 return _bounds;
             }
             else
@@ -93,25 +93,31 @@ public class SceneObject : MonoBehaviour, INameAlternatable
             if(Animator.HasState(0, Animator.StringToHash("Idle")))
             {
                 Animator.speed = 0f;
-                Animator.PlayInFixedTime("Idle", 0, 0.0f);
+                //Animator.speed = 0f;
+                //Animator.PlayInFixedTime("Idle", 0, 0.0f); TODO
             }
-       
-            //var ac = gameObject.GetComponent<Animator>().runtimeAnimatorController as UnityEditor.Animations.AnimatorController;
 
-            //UnityEditor.Animations.AnimatorStateMachine sm = ac.layers[0].stateMachine;
-            //UnityEditor.Animations.ChildAnimatorState[] states = sm.states;
-            //States = states.ToList();
         }
     }
 
     public Bounds GetObjectBounds()
     {
+        Bounds resultBounds;
         if (gameObject.GetComponent<MeshFilter>() != null)
-            return gameObject.GetComponent<MeshFilter>().mesh.bounds;
+            resultBounds= gameObject.GetComponent<MeshFilter>().mesh.bounds;
+        else if (gameObject.GetComponentInChildren<MeshFilter>() != null)
+            resultBounds = gameObject.GetComponentInChildren<MeshFilter>().sharedMesh.bounds;
         else if (gameObject.GetComponentInChildren<SkinnedMeshRenderer>() != null)
-            return gameObject.GetComponentInChildren<SkinnedMeshRenderer>().bounds;
+            resultBounds = gameObject.GetComponentInChildren<SkinnedMeshRenderer>().bounds;
         else
+        {
+            Debug.LogError("no bounds on " + gameObject.name);
             return new Bounds();
+        }
+        var scale = gameObject.transform.localScale;
+        var vector = new Vector3(resultBounds.size.x * scale.x, resultBounds.size.y * scale.y, resultBounds.size.z * scale.z);
+        resultBounds = new Bounds(resultBounds.center, vector);
+        return resultBounds;
     }
     public bool HasState(string name)
     {
@@ -167,6 +173,7 @@ public class SceneObject : MonoBehaviour, INameAlternatable
             Debug.LogError(string.Format("no such state:{0}", name)); 
             return; 
         }
+        Animator.speed = 0f;
         Animator.PlayInFixedTime(name, 0, 0.0f);
         CurrentState = name;
     }

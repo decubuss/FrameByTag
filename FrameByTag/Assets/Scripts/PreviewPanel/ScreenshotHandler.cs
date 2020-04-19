@@ -45,8 +45,6 @@ public class ScreenshotHandler : MonoBehaviour
 
         LastScreenshot = new Texture2D(width, height);
         LastScreenshot.LoadImage(byteArray);
-
-        Debug.Log(screenshotIndex + " is saved");
     }
     public void TakeScreenshot(int width, int height)
     {

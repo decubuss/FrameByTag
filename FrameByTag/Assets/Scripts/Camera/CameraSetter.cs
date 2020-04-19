@@ -38,7 +38,6 @@ public class CameraSetter : MonoBehaviour
     private Vector3 RightObjectsLimit;//
     private Vector3 LeftObjectsLimit;//
 
-    private ShotType Shot;
     private Vector3 ShotInitialPos;
 
     [SerializeField]
@@ -47,6 +46,8 @@ public class CameraSetter : MonoBehaviour
     private HorizontalAngle _horizontalAngle;
     [SerializeField]
     private VerticalAngle _verticalAngle;
+    [SerializeField]
+    private ShotType _shot;
 
     // Start is called before the first frame update
     void Start()
@@ -66,11 +67,11 @@ public class CameraSetter : MonoBehaviour
     }
     public ShotParameters GetShotParameters()
     {
-        return new ShotParameters(Shot, _horizontalAngle, _verticalAngle, _third);
+        return new ShotParameters(_shot, _horizontalAngle, _verticalAngle, _third);
     }
     private void StartupShot()
     {
-        Shot = ShotType.DefaultShot;
+        _shot = ShotType.DefaultShot;
         _third = HorizontalThird.Center;
         _verticalAngle = VerticalAngle.EyeLevel;
         _horizontalAngle = HorizontalAngle.Front;
@@ -83,7 +84,6 @@ public class CameraSetter : MonoBehaviour
     private void CameraSetReady(string input)
     {
         ObjectsPlacementController.OnContentPreparedEvent += BuildNewShot;
-        _baseDetail.UpdatePosition();
     }
 
     private void DefaultShot(float springArmLenCoef = 0.37f)
@@ -119,12 +119,13 @@ public class CameraSetter : MonoBehaviour
 
         int Direction = (thirdPoint.x < focusTransform.position.x) ? 1 : -1;
         //Debug.Log(Mathf.Abs(thirdPoint.x - focusTransform.position.x));
+        _third = third;
         CurrentCamera.transform.position = new Vector3(Mathf.Abs(thirdPoint.x - focusTransform.position.x), 0, 0) * Direction + ShotInitialPos;
 
     }
     private void ApplyHAngle(HorizontalAngle angle)
     {
-        Quaternion CalculatedRot = _baseDetail.transform.rotation;
+        Quaternion calculatedRot = _baseDetail.transform.rotation;
 
         var focus = new Vector3(_baseDetail.transform.forward.x, 0, _baseDetail.transform.forward.z);
 
@@ -139,23 +140,24 @@ public class CameraSetter : MonoBehaviour
         switch (angle)
         {
             case HorizontalAngle.Front:
-                CalculatedRot.y = Quaternion.Euler(0, 180 - Angle, 0).y;//_baseDetail.transform.rotation.x
+                calculatedRot.y = Quaternion.Euler(0, 180 - Angle, 0).y;//_baseDetail.transform.rotation.x
+
                 debugline += angle.ToString();
                 
                 break;
             case HorizontalAngle.DeadFront:
-                CalculatedRot.y = Quaternion.Euler(-30f, 0, 0).x;
+                calculatedRot.y = Quaternion.Euler(-30f, 0, 0).x;
                 debugline += angle.ToString();
                 //rotate around focus group, recognisable +offset to default Zrotation
                 //which should be parallel to the line of view(Z vector of camera)
                 break;
             case HorizontalAngle.RightAngle:
-                CalculatedRot.y = Quaternion.Euler(0, 180 - (Angle - 45), 0).y;
+                calculatedRot.y = Quaternion.Euler(0, 180 - (Angle - 45), 0).y;
                 debugline += angle.ToString();
 
                 break;
             case HorizontalAngle.LeftAngle:
-                CalculatedRot.y = Quaternion.Euler(0, 180 - (Angle + 45), 0).y;
+                calculatedRot.y = Quaternion.Euler(0, 180 - (Angle + 45), 0).y;
                 debugline += angle.ToString();
 
                 break;
@@ -163,7 +165,9 @@ public class CameraSetter : MonoBehaviour
         }
 
         //Debug.Log(debugline);
-        _baseDetail.transform.rotation = CalculatedRot;
+        _horizontalAngle = angle;
+        calculatedRot.y = 180 - Angle > 180f ? calculatedRot.y * -1 : calculatedRot.y;
+        _baseDetail.transform.rotation = calculatedRot;
     }
     private void ApplyVAngle(VerticalAngle angle)
     {
@@ -193,6 +197,7 @@ public class CameraSetter : MonoBehaviour
                 break;
         }
         //Debug.Log(debugline);
+        _verticalAngle = angle;
         _baseDetail.transform.rotation = CalculatedRot;
     }
     private Vector3 CalculateCameraPosition(float springArmCoef)
@@ -375,20 +380,21 @@ public class CameraSetter : MonoBehaviour
     }
     public void ExecuteParameters(ShotParameters shotParameters)
     {
+        _baseDetail.UpdatePosition();
+
         if (shotParameters.ShotType == ShotType.DefaultShot)
             DefaultShot();
         else
             this.SendMessage(shotParameters.ShotType.ToString());
 
+        _shot = shotParameters.ShotType;
         ApplyThird(shotParameters.Third);
         ApplyHAngle(shotParameters.HAngle);
         ApplyVAngle(shotParameters.VAngle);
     }
 
     #region shots
-    /// <summary>
-    /// Take an extremely close shot of an object's detail/action
-    /// </summary>
+    
     public void VeryCloseShot()
     {
         DefaultShot();
@@ -397,13 +403,10 @@ public class CameraSetter : MonoBehaviour
         //set camera new location depend on object's actual size 
         //set camera rotation to look at chosen bone
         Debug.Log("Extremely Close shot");
-        Shot = ShotType.CloseShot;
+        _shot = ShotType.CloseShot;
 
     }
 
-    /// <summary>
-    /// Focus on a half of an object, mobility doesnt matter, but focus on object action
-    /// </summary>
     public void MediumShot()
     {
         DefaultShot();
@@ -417,13 +420,9 @@ public class CameraSetter : MonoBehaviour
         CurrentCamera.transform.position = result;
 
         Debug.Log("Medium shot");
-        Shot = ShotType.MediumShot;
+        _shot = ShotType.MediumShot;
 
     }
-
-    /// <summary>
-    /// Focus on fully visible object and a bit of nevironment is shown
-    /// </summary>
     public void LongShot()
     {
         DefaultShot();
@@ -432,24 +431,21 @@ public class CameraSetter : MonoBehaviour
         //ParentGO.transform.position = Vector3.Lerp(LeftObjectsLimit, RightObjectsLimit, coef);
         
         Debug.Log("Long shot");
-        Shot = ShotType.LongShot;
+        _shot = ShotType.LongShot;
 
     }
 
-    /// <summary>
-    /// Focus on environment, where object is contatined. Object is barely visible
-    /// </summary>
     public void ExtremelyLongShot()
     {
         //get object actual size
         //find distance between object and camera, so that environment could fit into camera view 
-        DefaultShot(0.17f);
+        DefaultShot(0.07f);
 
         //after that rot is 0
         //get a screen space used by focus layer
         //keep going back until used screenspace is 3-5%
         Debug.Log("Extremely Long shot");
-        Shot = ShotType.ExtremelyLongShot;
+        _shot = ShotType.ExtremelyLongShot;
 
     }
     //TODO: is it a unique setter for each camera? or is it one object that manages them all (it will be handy to have unique)?

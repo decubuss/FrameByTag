@@ -28,8 +28,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
     public static event OnContentPrepared OnContentPreparedEvent;
     public static event OnContentPrepared OnStartupEndedEvent;
 
-    public List<ShotElement> _lastExecutedElements;
-    public List<DescriptionTag> _lastExecutedTags;
+    public Dictionary<DescriptionTag, ShotElement> LastExecutedTagItemDict;
     void Start()
     {
         SpawnedObjects = new List<string>();
@@ -38,7 +37,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         var DescriptionHandler = new ObjectsPlacementHandler(AOController, this);
 
         //FrameDescription.OnDescriptionChangedEvent += PlacementHandle;
-        ObjectsPlacementHandler.OnSentenceProcessedEvent += SceneDescriptionSetup;
+        ObjectsPlacementHandler.OnSentenceProcessedEvent += SceneByDescriptionSetup;
 
         SceneDefaultContentSetup();
 
@@ -50,76 +49,110 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
     {
         if (FocusLayer.Contains(AOController.GetObject("Dummy"))) { return; }
 
-        SpawnFocusedObject(new ShotElement("Dummy", 1, HierarchyRank.InFocus, "Idle"));
+        var dummy = new ShotElement("Dummy", 1, HierarchyRank.InFocus, "Idle");
+        SpawnFocusedObject(dummy);
+        LastExecutedTagItemDict = new Dictionary<DescriptionTag, ShotElement>() 
+        { 
+            { new DescriptionTag(0, "Dummy", TagType.Item), dummy } 
+        };
+
     }
-    private void SceneDescriptionSetup(List<DescriptionTag> tags, List<ShotElement> elements)
+    private void SceneByDescriptionSetup(Dictionary<DescriptionTag, ShotElement> itemTags)
     {
-        if (tags == null && elements == null)
+        if (itemTags == null)
         {
             OnContentPreparedEvent?.Invoke();
             return;
         }
-        PrepareScene(tags, elements);
+        PrepareNewScene(itemTags);
     }
 
-    public void PrepareScene(List<DescriptionTag> tags,List<ShotElement> elements)
+    private void PrepareNewScene(Dictionary<DescriptionTag, ShotElement> itemTags)
     {
-        if (tags == _lastExecutedTags && elements == _lastExecutedElements )
+        PrepareScene(itemTags);
+        OnContentPreparedEvent?.Invoke();
+    }
+    public void PrepareScene(Dictionary<DescriptionTag, ShotElement> tagItemDict)
+    {
+        var tags = tagItemDict.Keys.ToList();
+        var elements = tagItemDict.Values.Where(x => x != null).ToList();
+        if (tagItemDict == LastExecutedTagItemDict)
         {
             OnContentPreparedEvent?.Invoke();
             return;
         }
         else
         {
-            //ClearScene();
+            ClearScene();
         }
 
         int maxLayer = elements.Max(x => x.Layer);
         for(int i = 0; i <= maxLayer;  i++)
         {
 
-            var layerElements = elements.Where(x => x.Layer == i);
+            var layerElements = elements.Where(x => x.Layer == i).ToList();
+            layerElements = layerElements.OrderBy(x => (int)x.Rank).ToList();
             foreach (var element in layerElements)
             {
-                if(_lastShotElements.Keys.FirstOrDefault(x => x.PropName == element.PropName) != null)
+                switch (element.Rank)
                 {
-                    var sceneElement = _lastShotElements.Keys.FirstOrDefault(x => x.PropName == element.PropName);
-                    ModifySceneObject(sceneElement, element);
+                    case HierarchyRank.InFocus:
+                        SpawnFocusedObject(element);
+                        break;
+                    case HierarchyRank.Addition:
+                        SpawnAddition(element, tags);
+                        break;
+                    case HierarchyRank.Background:
+                        break;
                 }
-                else
-                {
-                    Debug.Log(string.Format("{0} {1} {2} {3}", element.Layer, element.PropName, element.Rank, element.State));
-                    switch (element.Rank)
-                    {
-                        case HierarchyRank.InFocus:
-                            SpawnFocusedObject(element);
-                            break;
-                        case HierarchyRank.Addition:
-                            SpawnAddition(element, tags);
-                            break;
-                        case HierarchyRank.Background:
-                            break;
-                    }
-                }
+
+                //if (_lastShotElements.Keys.FirstOrDefault(x => x.PropName == element.PropName) != null)
+                //{
+                //    var sceneElement = _lastShotElements.Keys.FirstOrDefault(x => x.PropName == element.PropName);
+                //    ModifySceneObject(sceneElement, element);
+                //}
+                //else
+                //{
+                    
+                //}
             }
+
         }
 
         if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
             SceneDefaultContentSetup();
 
-        _lastExecutedElements = elements;
-        _lastExecutedTags = tags;
-
-        OnContentPreparedEvent?.Invoke();
+        LastExecutedTagItemDict = tagItemDict;
     }
     private void ClearScene()
     {
-        if (FocusLayer.Count == 0) { return; }
-        foreach (var FObject in FocusLayer)
+        if (FocusLayer.Count != 0)
         {
-            Destroy(FObject);
+            foreach (var FObject in FocusLayer)
+            {
+                Destroy(FObject);
+            }
         }
+        if (AdditiveLayer.Count != 0)
+        {
+            foreach (var addition in AdditiveLayer)
+            {
+                Destroy(addition);
+            }
+        }
+        if (BackgroundLayer.Count != 0)
+        {
+            foreach (var back in BackgroundLayer)
+            {
+                Destroy(back);
+            }
+        }
+
         FocusLayer = new List<GameObject>();
+        AdditiveLayer = new List<GameObject>();
+        BackgroundLayer = new List<GameObject>();
+        LastExecutedTagItemDict = new Dictionary<DescriptionTag, ShotElement>();
+        _lastShotElements = new Dictionary<ShotElement, GameObject>();
     }
 
     private void SpawnFocusedObject(ShotElement element)
@@ -130,6 +163,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         if ( FocusLayer.FirstOrDefault( x => x.name == obj.name) == null) //&& ReferenceEquals( obj, FocusLayer.Select( x => x.name == obj.name) )
         {
             var sceneGO = Instantiate(obj);
+
             if (sceneGO.GetComponent<SceneObject>().CurrentState != element.State)
                 sceneGO.GetComponent<SceneObject>().SetStateByName(element.State);
             sceneGO.transform.position = FocusLayer.Count == 0 ? Vector3.zero : Vector3.one;//TODO: not one but calculated shit
@@ -153,10 +187,10 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
     private void SpawnAddition(ShotElement element,List<DescriptionTag> tags)
     {
         if (AdditiveLayer == null) { AdditiveLayer = new List<GameObject>(); }
-        int elementIndex = tags.FirstOrDefault(x => x.Tag == element.PropName).Index;
+        int elementIndex = tags.FirstOrDefault(x => x.Keyword == element.PropName).Index;
 
         DescriptionTag relevantSpatial = tags.Where(x => x.Index < elementIndex
-                                           && x.Type == TagType.Spatial)
+                                           && x.TagType == TagType.Spatial)
                                   .OrderByDescending(x => x.Index)
                                   .First();
         var obj = AOController.GetObject(element.PropName);
@@ -180,20 +214,22 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         Vector3 refPoint = refObj.transform.position;
         Quaternion refQuat = refObj.transform.rotation;
         //TODO: damn bro you gotta find a group attached to it
-        result.position = SpatialManage(spatial.Tag, refObj.GetComponent<SceneObject>(), newObj.GetComponent<SceneObject>()) + refPoint;
+        result.position = SpatialManage(spatial.Keyword, refObj.GetComponent<SceneObject>(), newObj.GetComponent<SceneObject>()) + refPoint;
         result.rotation = refQuat;
         return result;
     }
-    private Vector3 SpatialManage(string spatial, SceneObject go1, SceneObject go2)
+    private Vector3 SpatialManage(string spatial, SceneObject basedObject, SceneObject go2)
     {
         switch (spatial)
         {
             case "By":
-                return -Vector3.forward * (go1.Bounds.size.z + go2.Bounds.size.z);
+                return -Vector3.forward * (basedObject.Bounds.size.z + go2.Bounds.size.z);
                 break;
             case "Near":
-                return -Vector3.forward * (go1.Bounds.size.z + go2.Bounds.size.z) * 2;
+                return -Vector3.forward * (basedObject.Bounds.size.z + go2.Bounds.size.z) * 2;
                 break;
+            case "To":
+                return Vector3.forward * (basedObject.Bounds.size.z + go2.Bounds.size.y);
             default:
                 return Vector3.zero;
                 break;
@@ -203,8 +239,20 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
     {
 
     }
-    
 
+    public Dictionary<string, string> GetAlternateNames()
+    {
+        var initialDict = new Dictionary<string[], string>
+        {
+            { new string[] { "beside", "nearby", "by", "by the" }, "By" },
+            { new string[] { "at the background", "as the background", "as background" }, "Background" },
+            { new string[] { "at the", "in the", "in"}, "In" },
+            { new string[] { "to the", "to"}, "To" }
+        };
+
+        var result = Helper.DictBreakDown(initialDict);
+        return result;
+    }
     #region OldKingdom
     private void UpdateBackground(List<string> TagSequence)
     {
@@ -295,18 +343,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         
     }
     //generally spatial prepositions
-    public Dictionary<string, string> GetAlternateNames()
-    {
-        var initialDict = new Dictionary<string[], string>
-        {
-            { new string[] { "beside", "nearby", "by", "by the" }, "By" },
-            { new string[] { "at the background", "as the background", "as background" }, "Background" },
-            { new string[] { "at the", "in the", "in"}, "In" }
-        };
-
-        var result = Helper.DictBreakDown(initialDict);
-        return result;
-    }
+    
     private GameObject FindSceneObjectByName(string name)
     {
         //PrefabUtility.GetCorrespondingObjectFromSource(FObject).name == name ||

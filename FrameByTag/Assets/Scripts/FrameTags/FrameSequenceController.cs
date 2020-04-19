@@ -19,21 +19,15 @@ public class FrameSequenceController : MonoBehaviour
         FrameSequence = new List<Frame>();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
     public void CreateFrame()
     {
-        Frame newFrame = new Frame(CameraSetter.GetShotParameters(), OPController._lastExecutedElements, OPController._lastExecutedTags, FrameDescription.RawFrameInput);
+        Frame newFrame = new Frame(CameraSetter.GetShotParameters(), OPController.LastExecutedTagItemDict, FrameDescription.RawFrameInput);
         FrameSequence.Add(newFrame);
     }
     public void ReadFrame(int index)
     {
         Frame frame = FrameSequence[index];
-        OPController.PrepareScene(frame.DescriptionTags, frame.ShotElements);
+        OPController.PrepareScene(frame.TagItemDict);
         CameraSetter.ExecuteParameters(frame.ShotParameters);
         CurrentFrame = frame;
     }

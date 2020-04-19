@@ -18,7 +18,7 @@ public class ObjectsPlacementHandler
 
     private string _lastProcessedInput;
 
-    public delegate void OnSentenceProcessed(List<DescriptionTag> tags, List<ShotElement> elements);
+    public delegate void OnSentenceProcessed(Dictionary<DescriptionTag, ShotElement> itemTags);
     public static event OnSentenceProcessed OnSentenceProcessedEvent;
     public ObjectsPlacementHandler(AvailableObjectsController aocontroller, ObjectsPlacementController opcontroller)
     {
@@ -33,13 +33,13 @@ public class ObjectsPlacementHandler
     {
         if(Helper.ExcludeCameraTags(rawinput) == _lastProcessedInput)
         {
-            OnSentenceProcessedEvent?.Invoke(null, null);
+            OnSentenceProcessedEvent?.Invoke(null);
             return;
         }
         _lastProcessedInput = Helper.ExcludeCameraTags(rawinput);
-        if (_lastProcessedInput == "")
+        if (string.IsNullOrWhiteSpace(_lastProcessedInput))
         {
-            OnSentenceProcessedEvent?.Invoke(null, null);
+            OnSentenceProcessedEvent?.Invoke(null);
             return;
         }
 
@@ -48,38 +48,39 @@ public class ObjectsPlacementHandler
         input = AddSpaces(input).ToLower();
 
         //TODO: add dictionary <descriptiontags,elements>
-        var ItemTag = new Dictionary<DescriptionTag, ShotElement>();
-        var Elements = new List<ShotElement>();
-        var SceneSequence = new List<DescriptionTag>();
-        var processedInput = HandleItem(input, ref Elements, ref SceneSequence);
-        processedInput = HandleSpatials(processedInput, ref SceneSequence);
-        processedInput = HandleStates(processedInput, ref Elements, ref SceneSequence);
-        HandleRelations(processedInput, ref Elements);
+        var tagItemSeq = new Dictionary<DescriptionTag, ShotElement>();
+        
+        var processedInput = HandleItems(input, ref tagItemSeq);
+        processedInput = HandleSpatials(processedInput, ref tagItemSeq);
+        processedInput = HandleStates(processedInput, ref tagItemSeq);
+        HandleRelations(processedInput, ref tagItemSeq);
+
         Debug.Log(processedInput);
-        OnSentenceProcessedEvent?.Invoke(SceneSequence, Elements);
+        OnSentenceProcessedEvent?.Invoke(tagItemSeq);
     }
 
-    private string HandleItem(string rawinput, ref List<ShotElement> elements, ref List<DescriptionTag> sceneSequence)
+    private string HandleItems(string rawinput, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
         string processedInput = rawinput;
         var altNames = Helper.DictSortByLength(AOController.GetAlternateNames());
 
         foreach (var altName in altNames)
         {
-            if (processedInput.Contains(altName.Key))
+            if (rawinput.Contains(altName.Key) || Helper.ContainsTag(rawinput, altName.Key))//processedInput.Contains(altName.Key))
             {
                 processedInput = processedInput.Replace(altName.Key, altName.Value);
                 int index = Array.IndexOf(processedInput.Split(' '), altName.Value);
                 var tag = new DescriptionTag(index, altName.Value, TagType.Item);
-                sceneSequence.Add(tag);
-                elements.Add( new ShotElement(altName.Value) );
+                itemTags.Add(tag, new ShotElement(altName.Value,rank: HierarchyRank.InFocus));
+
             }
         }
 
         return processedInput;
     }
-    private string HandleSpatials(string input, ref List<DescriptionTag> sceneSequence)
+    private string HandleSpatials(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
+        var sceneSequence = itemTags.Keys.ToList();
         string processedInput = input;
         var sortedSpatials = Helper.DictSortByLength(OPController.GetAlternateNames());
 
@@ -90,13 +91,20 @@ public class ObjectsPlacementHandler
                 processedInput = processedInput.Replace(spatial.Key, spatial.Value);
                 int index = Array.IndexOf(processedInput.Split(' '), spatial.Value);
                 var tag = new DescriptionTag(index, spatial.Value, TagType.Spatial);
-                sceneSequence.Add(tag);
+
+                List<string> spatials = new List<string>() { "By" };
+                var updatedItem = itemTags.Where(x => x.Value != null).Where(x => x.Key.Index > index).First();
+                updatedItem.Value.Rank = spatials.Contains(spatial.Value) ? HierarchyRank.Addition : updatedItem.Value.Rank;
+                itemTags[updatedItem.Key] = updatedItem.Value;
+
+                //sceneSequence.Add(tag);
+                itemTags.Add(tag, null);
             }
         }
 
         return processedInput;
     }
-    private string HandleStates(string input, ref List<ShotElement> elements, ref List<DescriptionTag> descriptionTags)
+    private string HandleStates(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
         string result = input;
         var parts = TreeParsing(input).ToArray();
@@ -118,13 +126,14 @@ public class ObjectsPlacementHandler
                 var stateWord = word.First().ToString().ToUpper() + word.Substring(1);
                 result = input.Replace(word, stateWord);//TODO: insert Name instead of name
                 int verbIndex = GetWordIndex(result, stateWord);//TODO: retruns -1
-                var prevItems = descriptionTags.Where(x=>x.Type == TagType.Item)
-                                               .Where(x => x.Index < verbIndex && x.Index >= lastActionIndex);
+                var prevItems = itemTags.Where(x=>x.Key.TagType == TagType.Item)
+                                               .Where(x => x.Key.Index < verbIndex && x.Key.Index >= lastActionIndex);
                 foreach(var prevItem in prevItems)
                 {
-                    elements.FirstOrDefault(x => x.PropName == prevItem.Tag).State = stateWord;
-                    elements.FirstOrDefault(x => x.PropName == prevItem.Tag).Layer = layer;
-                    elements.FirstOrDefault(x => x.PropName == prevItem.Tag).Rank = HierarchyRank.InFocus;
+                    itemTags.FirstOrDefault(x => x.Value.PropName == prevItem.Key.Keyword).Value.State = stateWord;
+                    itemTags.FirstOrDefault(x => x.Value.PropName == prevItem.Key.Keyword).Value.Layer = layer;
+                    itemTags.FirstOrDefault(x => x.Value.PropName == prevItem.Key.Keyword).Value.Rank = HierarchyRank.InFocus;
+                    //TODO: just store and assign
                 }
                 
                 lastActionIndex = i;
@@ -135,30 +144,20 @@ public class ObjectsPlacementHandler
         
         return result;
     }
-    private void HandleRelations(string input, ref List<ShotElement> elements)
+    private void HandleRelations(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
-        //Debug.Log(input);
-        //string[] parts = input.Split(' ');
-        //for(int i = 0; i < parts.Length; i++)
-        //{
-        //    if (parts[i] == ",")
-        //    {
-        //        i++;
-        //    }
+        if (itemTags.Values.Count >= 1) 
+        { 
+            itemTags.Values.First().Rank = HierarchyRank.InFocus;
+            itemTags.Values.First().Layer = 1; 
+        }
 
-        //}
-        foreach(var element in elements)
+        foreach(var element in itemTags.Values.Where(x=> x != null))
         {
             element.Rank = element.Rank == HierarchyRank.Default ? HierarchyRank.Addition : element.Rank;
-            //if (element.Rank == HierarchyRank.Addition)
-            //{
-            //    var sequence = elements.OrderByDescending(x => x.Layer)
-            //                          .Where(x => x.Layer > element.Layer);
-            //    element.Layer = sequence.Count>0?sequence.Last().Layer:
-            //}
+            element.Layer = 1;
         }
-        //if focused group has 1 action but sentence contains another one without it: focus to focus, another one to addition, back to back
-        //if 
+        
         //TODO: rework this thing, something isnt right
     }
     

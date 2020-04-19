@@ -34,7 +34,7 @@ public class UIController : MonoBehaviour
     {
         SequenceController.ReadFrame(index);
         _currentPreviewIndex = index;
-        Debug.Log(string.Format("{0} is ready", _currentPreviewIndex));
+        //Debug.Log(string.Format("{0} is ready", _currentPreviewIndex));
     }
     public void UpdatePreview()
     {

@@ -48,18 +48,6 @@ public class AvailableObjectsController : INameAlternatable
         //TODO: serialize already downloaded and check if anything unserialized is here
         var availableObjects = new List<GameObject>();
 
-        //DirectoryInfo resourcesPath = new DirectoryInfo(Application.dataPath + @"\Resources");
-        //FileInfo[] fileInfo = resourcesPath.GetFiles("*.prefab", SearchOption.AllDirectories);
-
-        //foreach (FileInfo file in fileInfo)
-        //{
-        //    string objectToLoad = file.Name.Replace(".prefab", "");
-        //    Object loadedObject = Resources.Load(objectToLoad, typeof(GameObject));
-        //    availableObjects.Add((GameObject)loadedObject);
-        //    //Debug.Log(loadedObject.name);
-        //}
-
-
         foreach(var downld in Resources.LoadAll("Prefabs"))
         {
             GameObject go = (GameObject)downld;

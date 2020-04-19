@@ -7,13 +7,15 @@ public enum TagType { Spatial, Item, Referencer, Action}
 public class DescriptionTag
 {
     public int Index;
-    public string Tag;
-    public TagType Type;
+    public string Keyword;
+    public TagType TagType;
 
-    public DescriptionTag(int index, string tag, TagType type)
+    public DescriptionTag(int index, string keyword, TagType type)
     {
         Index = index;
-        Tag = tag;
-        Type = type;
+        Keyword = keyword;
+        TagType = type;
     }
+
+
 }

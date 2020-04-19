@@ -27,6 +27,7 @@ public class BaseDetail : MonoBehaviour
 
         gameObject.transform.position = UnmodifiedPosition;
         gameObject.transform.rotation = Quaternion.Euler(0, 0, 0);
+        if (ControlledCamera == null) { ControlledCamera = FindObjectOfType<CameraSetter>().CurrentCamera; }
         ControlledCamera.transform.SetParent(gameObject.transform);
 
     }

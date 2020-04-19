@@ -25,7 +25,7 @@ public class CameraParametersHandler
 
             { new string[] { "long shot", "ls", "full shot" }, "LongShot" },
             { new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot" },
-            { new string[] { "large shot", "open shot", "really long shot" }, "ExtremelyLongShot" }
+            { new string[] { "large shot", "open shot", "ws" }, "ExtremelyLongShot" }
         };
     public static Dictionary<string, string> CameraParametersAltNames
     {
@@ -53,11 +53,11 @@ public class CameraParametersHandler
             return DefaultParams;
         }
         _generatedParameters = GenerateShotByText(input);
-        var ShotOptionNames = CameraParametersAltNames;
+        var ShotOptionNames = Helper.DictSortByLength(CameraParametersAltNames);
         var processedInput = input.ToLower();
         foreach (var Option in ShotOptionNames)
         {
-            if (input.Contains(Option.Key))
+            if (input.Contains( Option.Key))
             {
                 processedInput = processedInput.Replace(Option.Key, Option.Value);
             }
@@ -73,7 +73,8 @@ public class CameraParametersHandler
 
     private CameraSetter.ShotType HandleShotType(string processedInput)
     {
-        foreach (var shotType in Enum.GetValues(typeof(CameraSetter.ShotType)).Cast<CameraSetter.ShotType>())
+        var values = Enum.GetValues(typeof(CameraSetter.ShotType)).Cast<CameraSetter.ShotType>().OrderByDescending(x=>x.ToString().Length);
+        foreach (var shotType in values)
         {
             if (processedInput.Contains(shotType.ToString()))
                 return shotType;

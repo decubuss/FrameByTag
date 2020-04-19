@@ -15,4 +15,6 @@ public struct ShotParameters
         VAngle = vAngle;
         Third = third;
     }
+
+   
 }

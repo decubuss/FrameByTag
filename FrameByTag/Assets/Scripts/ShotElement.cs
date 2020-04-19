@@ -22,4 +22,9 @@ public class ShotElement
         State = state;
         Rank = rank;
     }
+
+    public override string ToString()
+    {
+        return string.Format("{0} {1} {2} {3}", this.Layer, this.PropName, this.Rank, this.State);
+    }
 }
