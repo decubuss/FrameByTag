@@ -125,9 +125,10 @@ public class CameraSetter : MonoBehaviour
     }
     private void ApplyHAngle(HorizontalAngle angle)
     {
-        Quaternion calculatedRot = _baseDetail.transform.rotation;
+        var calculatedRot = _baseDetail.transform.eulerAngles;
+        Vector3 fixer = _baseDetail.transform.position;
 
-        var focus = new Vector3(_baseDetail.transform.forward.x, 0, _baseDetail.transform.forward.z);
+        var focus = new Vector3(_baseDetail.transform.forward.x, 0, _baseDetail.transform.forward.z);//_baseDetail.transform.forward.z
 
         var camera = _baseDetail.transform.position - CurrentCamera.transform.position ;
         camera = new Vector3(camera.x, 0, camera.z);
@@ -140,7 +141,7 @@ public class CameraSetter : MonoBehaviour
         switch (angle)
         {
             case HorizontalAngle.Front:
-                calculatedRot.y = Quaternion.Euler(0, 180 - Angle, 0).y;//_baseDetail.transform.rotation.x
+                calculatedRot += new Vector3(0, 180 - Angle, 0);//_baseDetail.transform.rotation.x
 
                 debugline += angle.ToString();
                 
@@ -167,11 +168,12 @@ public class CameraSetter : MonoBehaviour
         //Debug.Log(debugline);
         _horizontalAngle = angle;
         calculatedRot.y = 180 - Angle > 180f ? calculatedRot.y * -1 : calculatedRot.y;
-        _baseDetail.transform.rotation = calculatedRot;
+        _baseDetail.transform.eulerAngles = calculatedRot;
     }
     private void ApplyVAngle(VerticalAngle angle)
     {
-        Quaternion CalculatedRot = _baseDetail.transform.rotation;
+        var CalculatedRot = _baseDetail.transform.eulerAngles;
+        Vector3 fixer = _baseDetail.transform.position;
         string debugline = "Vertical angle: ";
         switch (angle)
         {
@@ -180,7 +182,7 @@ public class CameraSetter : MonoBehaviour
                 debugline += angle.ToString();
                 break;
             case VerticalAngle.High:
-                CalculatedRot.x = Quaternion.Euler(-30f,0 ,0).x;
+                CalculatedRot += new Vector3(-30f, 0, 0);
                 debugline += angle.ToString();
                 break;
             case VerticalAngle.EyeLevel:
@@ -198,7 +200,7 @@ public class CameraSetter : MonoBehaviour
         }
         //Debug.Log(debugline);
         _verticalAngle = angle;
-        _baseDetail.transform.rotation = CalculatedRot;
+        _baseDetail.transform.eulerAngles = CalculatedRot;
     }
     private Vector3 CalculateCameraPosition(float springArmCoef)
     {
@@ -389,12 +391,13 @@ public class CameraSetter : MonoBehaviour
 
         _shot = shotParameters.ShotType;
         ApplyThird(shotParameters.Third);
-        ApplyHAngle(shotParameters.HAngle);
         ApplyVAngle(shotParameters.VAngle);
+        ApplyHAngle(shotParameters.HAngle);
+
     }
 
     #region shots
-    
+
     public void VeryCloseShot()
     {
         DefaultShot();

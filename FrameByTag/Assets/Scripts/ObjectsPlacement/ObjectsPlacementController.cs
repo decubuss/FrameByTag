@@ -119,6 +119,11 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
 
         }
 
+        foreach(var dictElem in tagItemDict.Keys.Where(x=>x.TagType==TagType.Spatial))
+        {
+            MoveBySpatial(dictElem, tagItemDict);
+        }
+
         if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
             SceneDefaultContentSetup();
 
@@ -206,6 +211,15 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
     private void BackgroundSpawn(ShotElement element)
     {
 
+    }
+
+    private void MoveBySpatial(DescriptionTag spatial, Dictionary<DescriptionTag, ShotElement> tagItemDict)
+    {
+        var baseItem = tagItemDict.Where(x => x.Key.Index < spatial.Index && x.Value != null).First().Value;
+        var basedItem = tagItemDict.Where(x => x.Key.Index > spatial.Index && x.Value != null).First().Value;
+        var resultVector = SpatialManage(spatial.Keyword, AOController.GetSceneObject(baseItem.PropName), AOController.GetSceneObject(basedItem.PropName));
+
+        _lastShotElements[basedItem].transform.position = _lastShotElements[baseItem].transform.position + resultVector;
     }
     private Transform ApplySpatial(GameObject newObj, DescriptionTag spatial)
     {
