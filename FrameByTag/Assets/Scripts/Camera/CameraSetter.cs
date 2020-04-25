@@ -31,7 +31,7 @@ public class CameraSetter : MonoBehaviour
 
     [HideInInspector]
     public Camera CurrentCamera;
-    private ObjectsPlacementController ObjectsController;
+    private ObjectsPlacementController OPController;
     private CameraParametersHandler CPHandler;
     private FrameAttributes Frame;
 
@@ -53,7 +53,7 @@ public class CameraSetter : MonoBehaviour
     void Start()
     {
         Frame = new FrameAttributes();
-        ObjectsController = FindObjectOfType<ObjectsPlacementController>();
+        OPController = FindObjectOfType<ObjectsPlacementController>();
         CPHandler = new CameraParametersHandler(this);
         CurrentCamera = Camera.main;
         _baseDetail = new GameObject("BaseDetail").AddComponent<BaseDetail>();
@@ -95,7 +95,7 @@ public class CameraSetter : MonoBehaviour
     private void ApplyThird(HorizontalThird third)
     {
         var thirdsGO = CurrentCamera.transform.Find("Thirds");
-        Transform focusTransform = ObjectsController.FocusLayer.First().transform;
+        Transform focusTransform = OPController.FocusLayer.First().transform;
 
         var relativePos = CurrentCamera.transform.InverseTransformPoint(focusTransform.position);
         thirdsGO.localPosition = new Vector3(0, 0, relativePos.z);
@@ -125,8 +125,8 @@ public class CameraSetter : MonoBehaviour
     }
     private void ApplyHAngle(HorizontalAngle angle)
     {
-        var calculatedRot = _baseDetail.transform.eulerAngles;
-        Vector3 fixer = _baseDetail.transform.position;
+        Vector3 calculatedRot = _baseDetail.transform.eulerAngles;
+        Vector3 initalRot = _baseDetail.transform.eulerAngles;
 
         var focus = new Vector3(_baseDetail.transform.forward.x, 0, _baseDetail.transform.forward.z);//_baseDetail.transform.forward.z
 
@@ -141,7 +141,7 @@ public class CameraSetter : MonoBehaviour
         switch (angle)
         {
             case HorizontalAngle.Front:
-                calculatedRot += new Vector3(0, 180 - Angle, 0);//_baseDetail.transform.rotation.x
+                calculatedRot = new Vector3(initalRot.x, 180 - Angle, initalRot.z);//_baseDetail.transform.rotation.x
 
                 debugline += angle.ToString();
                 
@@ -153,12 +153,12 @@ public class CameraSetter : MonoBehaviour
                 //which should be parallel to the line of view(Z vector of camera)
                 break;
             case HorizontalAngle.RightAngle:
-                calculatedRot.y = Quaternion.Euler(0, 180 - (Angle - 45), 0).y;
+                calculatedRot = new Vector3(initalRot.x, 180 - (Angle - 45), initalRot.z); 
                 debugline += angle.ToString();
 
                 break;
             case HorizontalAngle.LeftAngle:
-                calculatedRot.y = Quaternion.Euler(0, 180 - (Angle + 45), 0).y;
+                calculatedRot = new Vector3(initalRot.x, 180 - (Angle + 45), initalRot.z);//180 - (Angle + 45)
                 debugline += angle.ToString();
 
                 break;
@@ -173,28 +173,28 @@ public class CameraSetter : MonoBehaviour
     private void ApplyVAngle(VerticalAngle angle)
     {
         var CalculatedRot = _baseDetail.transform.eulerAngles;
-        Vector3 fixer = _baseDetail.transform.position;
+        Vector3 initialRot = _baseDetail.transform.eulerAngles;
         string debugline = "Vertical angle: ";
         switch (angle)
         {
             case VerticalAngle.BirdsEye:
-                CalculatedRot.x = Quaternion.Euler(-60f, 0, 0).x;
+                CalculatedRot = new Vector3(-60f, initialRot.y, initialRot.z);
                 debugline += angle.ToString();
                 break;
             case VerticalAngle.High:
-                CalculatedRot += new Vector3(-30f, 0, 0);
+                CalculatedRot = new Vector3(-30f, initialRot.y, initialRot.z);
                 debugline += angle.ToString();
                 break;
             case VerticalAngle.EyeLevel:
-                CalculatedRot.x = Quaternion.Euler(0, 0, 0).x;
+                CalculatedRot = initialRot;
                 debugline += angle.ToString();
                 break;
             case VerticalAngle.Low:
-                CalculatedRot.x = Quaternion.Euler(30f, 0, 0).x;
+                CalculatedRot = new Vector3(30f, initialRot.y, initialRot.z);
                 debugline += angle.ToString();
                 break;
             case VerticalAngle.MouseEye:
-                CalculatedRot.x = Quaternion.Euler(60f, 0, 0).x;
+                CalculatedRot = new Vector3(60f, initialRot.y, initialRot.z);
                 debugline += angle.ToString();
                 break;
         }
@@ -222,29 +222,33 @@ public class CameraSetter : MonoBehaviour
     /// </returns>
     private Vector3 CalculateCenterOfFrame()
     {
-        var FObjects = ObjectsController.FocusLayer;
+        var focusFirst = OPController.FocusLayer.First();
+        var focusLast = OPController.FocusLayer.Last();
 
-        if (FObjects.Count > 1)
-        {
-            Vector3 ResultPoint = FObjects[0].transform.position + ((FObjects[FObjects.Count - 1].transform.position - FObjects[0].transform.position) / 2);
-            var AltResultPoint = ResultPoint;
-            //ResultPoint.y = GetObjectSize(FObjects.OrderByDescending(x => GetObjectSize(x).y).First()).y / 2;
-            ResultPoint.y = FObjects.OrderByDescending(x => x.GetComponent<SceneObject>().Bounds.size.y)
+        Vector3 ResultPoint = focusFirst.transform.position + ((focusLast.transform.position - focusFirst.transform.position) / 2);
+        ResultPoint.y = OPController.FocusLayer.OrderByDescending(x => x.GetComponent<SceneObject>().Bounds.size.y)
                                                         .First()
                                                         .GetComponent<SceneObject>()
                                                         .Bounds.size.y / 2;
-            return ResultPoint;
-        }
-        else if (FObjects.Count == 1)
-        {
-            Vector3 ResultPoint = FObjects[0].transform.position;
-            ResultPoint.y = FObjects[0].GetComponent<SceneObject>().Bounds.size.y / 2;
-            return ResultPoint;
-        }
-        else
-        {
-            return new Vector3(0, 2, 0);
-        }
+        return ResultPoint;
+        //if (FObjects.Count > 1)
+        //{
+        //    Vector3 ResultPoint = FObjects.First().transform.position + ((FObjects.Last().transform.position - FObjects[0].transform.position) / 2);
+        //    var AltResultPoint = ResultPoint;
+        //    //ResultPoint.y = GetObjectSize(FObjects.OrderByDescending(x => GetObjectSize(x).y).First()).y / 2;
+
+        //    return ResultPoint;
+        //}
+        //else if (FObjects.Count == 1)
+        //{
+        //    Vector3 ResultPoint = FObjects.First().transform.position;
+        //    ResultPoint.y = FObjects[0].GetComponent<SceneObject>().Bounds.size.y / 2;
+        //    return ResultPoint;
+        //}
+        //else
+        //{
+        //    return new Vector3(0, 2, 0);
+        //}
     }
     private float CalculateSpringArmLength(Vector3 CenterOfFrame, float GivenCoefficient)
     {
@@ -253,7 +257,7 @@ public class CameraSetter : MonoBehaviour
         var BottomPoint = CenterOfFrame;
         BottomPoint.y = 0;
 
-        var FObjects = ObjectsController.FocusLayer;
+        var FObjects = OPController.FocusLayer;
         var SpringArmLength = 0f;
         if (FObjects.Count > 1)
         {
@@ -291,7 +295,7 @@ public class CameraSetter : MonoBehaviour
     {
         var DirectionVector = Vector3.zero;
 
-        var FObjects = ObjectsController.FocusLayer;
+        var FObjects = OPController.FocusLayer;
         if (FObjects.Count > 1)
         {
             DirectionVector = Vector3.Cross(FObjects[0].transform.position - FObjects[FObjects.Count - 1].transform.position, Vector3.up);
@@ -318,7 +322,7 @@ public class CameraSetter : MonoBehaviour
     private float GetFObjectsWidth()
     {
         float ResultWidth = 0;
-        foreach (GameObject FocusedObject in ObjectsController.FocusLayer)
+        foreach (GameObject FocusedObject in OPController.FocusLayer)
         {
             ResultWidth += FocusedObject.GetComponent<SceneObject>().Width;
         }
@@ -327,7 +331,7 @@ public class CameraSetter : MonoBehaviour
     private float GetFObjectsHeight()
     {
         float maxHeight = 0;
-        foreach(var Object in ObjectsController.FocusLayer)//TODO: update focused objects on event
+        foreach(var Object in OPController.FocusLayer)//TODO: update focused objects on event
         {
             if(maxHeight < Object.GetComponent<SceneObject>().Height)
             {

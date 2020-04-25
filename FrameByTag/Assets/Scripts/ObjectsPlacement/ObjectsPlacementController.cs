@@ -13,6 +13,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
 
     private AvailableObjectsController AOController;
 
+    [SerializeField]
     public List<GameObject> FocusLayer;
     public List<GameObject> AdditiveLayer;
     public List<GameObject> BackgroundLayer;
@@ -171,7 +172,12 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
 
             if (sceneGO.GetComponent<SceneObject>().CurrentState != element.State)
                 sceneGO.GetComponent<SceneObject>().SetStateByName(element.State);
-            sceneGO.transform.position = FocusLayer.Count == 0 ? Vector3.zero : Vector3.one;//TODO: not one but calculated shit
+
+            Vector3 newObjectPos = Vector3.zero;
+            newObjectPos.x -= FocusLayer.Count == 0 ? 0f : (FocusLayer[FocusLayer.Count - 1].GetComponent<SceneObject>().Bounds.size.x / 2
+                    + sceneGO.GetComponent<SceneObject>().Bounds.size.x / 2);
+
+            sceneGO.transform.position = newObjectPos;//TODO: not one but calculated shit
             sceneGO.name = obj.name;
             _lastShotElements.Add(element, sceneGO);
             FocusLayer.Add(sceneGO);
@@ -267,72 +273,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         var result = Helper.DictBreakDown(initialDict);
         return result;
     }
-    #region OldKingdom
-    private void UpdateBackground(List<string> TagSequence)
-    {
-        TagSequence.ToArray();
-        foreach(var Tag in TagSequence)
-        {
-            if(Tag == "background" && TagSequence.IndexOf("background") >= 2)
-            {
-                if(TagSequence[TagSequence.IndexOf("background")-1] == "at")
-                {
-                    string objectname = TagSequence[TagSequence.IndexOf("background") - 2];
-                    Debug.Log(objectname + "at back");
-
-                    BackgroundLayer.Add(AOController.GetObject(objectname));
-                }
-                else
-                {
-                    Debug.Log(TagSequence[TagSequence.IndexOf("background") - 1] + "at back");//TODO: define any Available object in nearest area and attach to background
-                    //background is set realtively to camera smh
-                    //taking a frame center
-                    //understand where is "far" if defined obj is large size
-
-                }
-            }
-        }
-    }
-    public void UpdateScene()
-    {
-        if (FocusLayer.Count == 0) { return; } //temporary
-        foreach (var FObject in FocusLayer)
-        {
-            Destroy(FObject);
-        }
-    }
-    public void UpdateSceneObjects(List<string> RequestedObjectsList)
-    {
-        if(SpawnedObjects.Count == 0)
-        {
-            foreach(var ReqObj in RequestedObjectsList)
-            {
-                FocusLayerSpawn(ReqObj);
-            }
-        }
-        else
-        {
-            foreach (var SpawnedObject in SpawnedObjects)
-            {
-                RemoveSceneObject(SpawnedObject);
-            }
-
-            foreach (var Object in RequestedObjectsList)
-            {
-                FocusLayerSpawn(Object);
-            }
-
-            //find a way to spawn multiple objects. take in account that there can be actions between them
-
-            //var ting = "";
-            //foreach (var str in SpawnedObjects)
-            //{
-            //    ting += str + " "; //maybe also + '\n' to put them on their own line.
-            //}
-            //Debug.Log(ting);
-        }
-
-    }
+    
     private void FocusLayerSpawn(string ObjectToPlace)
     {
         if(AOController == null || AOController.GetObject(ObjectToPlace) == null) { return; }
@@ -347,8 +288,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         {
             Vector3 spawnPos = FocusLayer[FocusLayer.Count - 1].transform.position;
 
-            spawnPos.x = spawnPos.x - (FocusLayer[FocusLayer.Count - 1].GetComponent<SceneObject>().Bounds.size.x / 2 
-                    + AOController.GetObject(ObjectToPlace).GetComponent<SceneObject>().Bounds.size.x / 2);
+            
 
             var pointer = Instantiate(AOController.GetObject(ObjectToPlace), spawnPos, Quaternion.identity);
             FocusLayer.Add(pointer);
@@ -357,33 +297,6 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         
     }
     //generally spatial prepositions
-    
-    private GameObject FindSceneObjectByName(string name)
-    {
-        //PrefabUtility.GetCorrespondingObjectFromSource(FObject).name == name ||
-        foreach (var FObject in FocusLayer)
-        {
-            if (FObject.name.Replace("(Clone)","") == name)
-            {
-                return FObject;
-            }
-        }
-        foreach(var SObject in BackgroundLayer)
-        {
-            if (SObject.name == name)
-            {
-                return SObject;
-            }
-        }
-
-        return null;
-    }
-    private void RemoveSceneObject(string name)
-    {
-        var pointer = FindSceneObjectByName(name);
-        FocusLayer.Remove(pointer);
-        Destroy(pointer);
-    }
     
     public Vector3 GetBaseDetailPosition()
     {
@@ -399,5 +312,4 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
 
         return result;
     }
-    #endregion
 }
