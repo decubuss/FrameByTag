@@ -4,5 +4,12 @@
     <type fullname="OpenNLP" preserve="all"/>
     <type fullname="SharpEntropy" preserve="all"/>
     <type fullname="SharpWordNet" preserve="all"/>
+    <type fullname="SevenZip" preserve="all"/>
+    <type fullname="LemmaSharp" preserve="all"/>
+    <type fullname="LemmaSharpPreBuilt" preserve="all"/>
+    <type fullname="System.Configuration.ConfigurationManager" preserve="all"/>
+    <type fullname="System.Security.AccessControl" preserve="all"/>
+    <type fullname="System.Security.Permissions" preserve="all"/>
+    <type fullname="System.Security.Principal.Windows" preserve="all"/>
   </assembly>
 </linker>

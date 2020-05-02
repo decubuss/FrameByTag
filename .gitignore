@@ -82,3 +82,8 @@ FrameByTag/Packages/OpenNLP.1.3.5/OpenNLP.1.3.5.nupkg
 FrameByTag/Packages/SharpEntropy.1.0.0/.signature.p7s
 FrameByTag/Packages/SharpEntropy.1.0.0/lib/SharpEntropy.dll
 FrameByTag/Packages/SharpEntropy.1.0.0/SharpEntropy.1.0.0.nupkg
+FrameByTag/Packages/*
+FrameByTag/Assets/Packages/*
+FrameByTag/Assets/Plugins/*
+FrameByTag/Assets/Screenshots/*
+FrameByTag/Assets/StreamingAssets/*

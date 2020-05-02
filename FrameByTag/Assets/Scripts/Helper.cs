@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+
+using LemmaSharp;
 public static class Helper
 {
     public static Dictionary<string, string> DictSortByLength(Dictionary<string, string> dict)
@@ -48,5 +50,11 @@ public static class Helper
         }
         return result;
     }
-   
+    public static string LemmatizeOne(string word)
+    {
+        ILemmatizer lmtz = new LemmatizerPrebuiltFull(LemmaSharp.LanguagePrebuilt.English);
+        string lemma = lmtz.Lemmatize(word);
+        return lemma;
+    }
+
 }

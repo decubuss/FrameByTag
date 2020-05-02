@@ -95,7 +95,7 @@ public class CameraSetter : MonoBehaviour
     private void ApplyThird(HorizontalThird third)
     {
         var thirdsGO = CurrentCamera.transform.Find("Thirds");
-        Transform focusTransform = OPController.FocusLayer.First().transform;
+        Transform focusTransform = _baseDetail.transform;//OPController.FocusLayer.First().transform;
 
         var relativePos = CurrentCamera.transform.InverseTransformPoint(focusTransform.position);
         thirdsGO.localPosition = new Vector3(0, 0, relativePos.z);
@@ -231,24 +231,6 @@ public class CameraSetter : MonoBehaviour
                                                         .GetComponent<SceneObject>()
                                                         .Bounds.size.y / 2;
         return ResultPoint;
-        //if (FObjects.Count > 1)
-        //{
-        //    Vector3 ResultPoint = FObjects.First().transform.position + ((FObjects.Last().transform.position - FObjects[0].transform.position) / 2);
-        //    var AltResultPoint = ResultPoint;
-        //    //ResultPoint.y = GetObjectSize(FObjects.OrderByDescending(x => GetObjectSize(x).y).First()).y / 2;
-
-        //    return ResultPoint;
-        //}
-        //else if (FObjects.Count == 1)
-        //{
-        //    Vector3 ResultPoint = FObjects.First().transform.position;
-        //    ResultPoint.y = FObjects[0].GetComponent<SceneObject>().Bounds.size.y / 2;
-        //    return ResultPoint;
-        //}
-        //else
-        //{
-        //    return new Vector3(0, 2, 0);
-        //}
     }
     private float CalculateSpringArmLength(Vector3 CenterOfFrame, float GivenCoefficient)
     {
@@ -402,31 +384,31 @@ public class CameraSetter : MonoBehaviour
 
     #region shots
 
-    public void VeryCloseShot()
+    public void CloseShot()
     {
-        DefaultShot();
+        DefaultShot(2.1f);
+        string boneName = "head";
+        var boneTransform = OPController.FocusLayer.First().GetComponent<SceneObject>().GetTransformByBone(boneName);
+        float cameraNewHeight = (boneTransform.right * -1f * 0.07f).y + boneTransform.position.y;
+
+        CurrentCamera.transform.position = new Vector3(CurrentCamera.transform.position.x, cameraNewHeight, CurrentCamera.transform.position.z);
         //get object's bone
         //get object actual size
         //set camera new location depend on object's actual size 
         //set camera rotation to look at chosen bone
+        ShotInitialPos = CurrentCamera.transform.position;
         Debug.Log("Extremely Close shot");
         _shot = ShotType.CloseShot;
 
     }
-
     public void MediumShot()
     {
-        DefaultShot();
-        float CameraNewHeight = (float)(GetFObjectsHeight() * 0.75);
+        DefaultShot(0.75f);
+        float cameraNewHeight = (float)(GetFObjectsHeight() * 0.75);
+        CurrentCamera.transform.position = new Vector3(CurrentCamera.transform.position.x, cameraNewHeight, CurrentCamera.transform.position.z);
 
-        Vector3 NewFrameCenter = new Vector3(Frame.CenterOfFrame.x, CameraNewHeight, Frame.CenterOfFrame.z);
-        var PerpendicularDirection = CalculatePerpendicularDirection();
-        var SpringArmLength = CalculateSpringArmLength(NewFrameCenter, 0.8f);
+        ShotInitialPos = CurrentCamera.transform.position;
 
-        var result = NewFrameCenter + (PerpendicularDirection * SpringArmLength);
-        CurrentCamera.transform.position = result;
-
-        Debug.Log("Medium shot");
         _shot = ShotType.MediumShot;
 
     }
@@ -434,14 +416,11 @@ public class CameraSetter : MonoBehaviour
     {
         DefaultShot();
         //CalcFocusedObjectsBounds();
-
+        ShotInitialPos = CurrentCamera.transform.position;
         //ParentGO.transform.position = Vector3.Lerp(LeftObjectsLimit, RightObjectsLimit, coef);
-        
-        Debug.Log("Long shot");
         _shot = ShotType.LongShot;
 
     }
-
     public void ExtremelyLongShot()
     {
         //get object actual size
@@ -451,7 +430,6 @@ public class CameraSetter : MonoBehaviour
         //after that rot is 0
         //get a screen space used by focus layer
         //keep going back until used screenspace is 3-5%
-        Debug.Log("Extremely Long shot");
         _shot = ShotType.ExtremelyLongShot;
 
     }
@@ -461,37 +439,5 @@ public class CameraSetter : MonoBehaviour
 
      
     
-     /*private void ApplyThird(HorizontalThird third)
-    {
-        CalcFocusedObjectsBounds();
-        var lineSplitted = Vector3.Distance(LeftObjectsLimit, RightObjectsLimit) / 3;
-        Vector3 CalculatedPos = Vector3.zero;
-        switch (third)
-        {
-            case HorizontalThird.Auto:
-                //AI???
-                break;
-            case HorizontalThird.FirstThird:
-                CalculatedPos = ShotInitialPos + CurrentCamera.transform.right * lineSplitted;
-                break;
-            case HorizontalThird.Center:
-                CalculatedPos = ShotInitialPos;
-                break;
-            case HorizontalThird.LastThird:
-                CalculatedPos = ShotInitialPos + (-CurrentCamera.transform.right * lineSplitted);
-                break;
-        }
-
-        //CalculatedPos = (CurrentCamera.transform.position - CalculatedPos).normalized * Vector3.Distance(CurrentCamera.transform.position, CalculatedPos);
-
-        var objWorldPos = ObjectsController.FocusLayer.First().transform.position;
-        var objScreenPos = CurrentCamera.WorldToScreenPoint(objWorldPos);
-
-        Debug.Log(objScreenPos);
-
-        //Debug.Log(CalculatedPos);
-        CurrentCamera.transform.position = CalculatedPos;
-    }//store the change to undo/make it static
-
-     */
+     
 }

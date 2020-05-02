@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+using OpenNLP.Tools.Parser;
+
+
+
 public class CameraParametersHandler
 {
     private CameraSetter CameraController;
@@ -25,7 +29,8 @@ public class CameraParametersHandler
 
             { new string[] { "long shot", "ls", "full shot" }, "LongShot" },
             { new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot" },
-            { new string[] { "large shot", "open shot", "ws" }, "ExtremelyLongShot" }
+            { new string[] { "large shot", "open shot", "ws" }, "ExtremelyLongShot" },
+            { new string[] {"closeup","close shot"}, "CloseShot" }
         };
     public static Dictionary<string, string> CameraParametersAltNames
     {
@@ -110,9 +115,33 @@ public class CameraParametersHandler
     }
     private ShotParameters GenerateShotByText(string text)
     {
+        var parts = FrameDescription.ParsedParts;
+
+        //gather first element
+        FirstSyntaxElement(parts);
+        //gather percentage of elements
+        //gather location pointers
+        //gather sentence subjects
         var resultShot = DefaultParams;//new ShotParameters();
 
         return resultShot;
     }
-
+    private void FirstSyntaxElement(Parse[] sentenceParts)
+    {
+        var firstPart= sentenceParts.ToList();
+        Parse firstSign = sentenceParts.FirstOrDefault(x => x.Value == ",");
+        if (firstSign != null)
+        {
+            int signIndex = Array.IndexOf(sentenceParts, firstSign);
+            firstPart = sentenceParts.ToList().GetRange(0, signIndex);
+        }
+        
+        var parents = new List<Parse>(); 
+        foreach(var part in sentenceParts)
+        {
+            parents.Add(part.Parent);
+            //Debug.Log(part.Value + " : " + part.Parent + " : " + part.Type);
+        }
+        //var parents
+    }
 }

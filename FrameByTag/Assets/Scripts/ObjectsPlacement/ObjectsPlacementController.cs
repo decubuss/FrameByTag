@@ -307,7 +307,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         foreach (var FocusObject in FocusLayer)
         {
             result += FocusObject.transform.position;
-            result = result / (float) FocusLayer.Count; 
+            result /= (float) FocusLayer.Count; 
         }
 
         return result;

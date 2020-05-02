@@ -6,12 +6,19 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
+using OpenNLP.Tools.SentenceDetect;
+using OpenNLP.Tools.Coreference.Mention;
+using OpenNLP.Tools.Parser;
+using OpenNLP.Tools.Lang.English;
+using System.IO;
+
 public class FrameDescription : MonoBehaviour
 {
     public static FrameDescription instance;
     public InputField DescriptionSource;
 
     public static string RawFrameInput;
+    public static Parse[] ParsedParts;
 
     public delegate void OnDescriptionChangeDelegate(string Input);
     public static event OnDescriptionChangeDelegate OnDescriptionChangedEvent;
@@ -31,9 +38,19 @@ public class FrameDescription : MonoBehaviour
         if (!string.IsNullOrWhiteSpace(DescriptionSource.text) && DescriptionSource.text != RawFrameInput)
         {
             RawFrameInput = DescriptionSource.text;
+            ParsedParts = TreeParsing(RawFrameInput).ToArray();
 
             OnDescriptionChangedEvent?.Invoke(RawFrameInput);
         }
     }
-  
+
+    private Parse[] TreeParsing(string input)
+    {
+        var modelPath = Directory.GetCurrentDirectory() + @"\Models\";
+        var parser = new EnglishTreebankParser(modelPath);
+        var treeParsing = parser.DoParse(input);
+
+        return treeParsing.GetTagNodes();//.Show;
+    }
+
 }

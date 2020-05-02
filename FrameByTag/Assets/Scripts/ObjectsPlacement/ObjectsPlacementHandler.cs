@@ -107,7 +107,7 @@ public class ObjectsPlacementHandler
     private string HandleStates(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
         string result = input;
-        var parts = TreeParsing(input).ToArray();
+        var parts = FrameDescription.ParsedParts;
         int lastActionIndex = 0;
         int layer = 1;
 
@@ -174,8 +174,6 @@ public class ObjectsPlacementHandler
         }
     }
     
-
-
     static void PartsDetection(string expression, int index)
     {
 
@@ -203,13 +201,7 @@ public class ObjectsPlacementHandler
         }
         
     }
-    private Parse[] TreeParsing(string input)
-    {
-        var modelPath = Directory.GetCurrentDirectory() + @"\Models\";
-        var parser = new EnglishTreebankParser(modelPath);
-        var treeParsing = parser.DoParse(input);
-        return treeParsing.GetTagNodes();//.Show;
-    }
+    
 
     private string TreeParsingFull(string input)
     {
@@ -256,12 +248,12 @@ public class ObjectsPlacementHandler
             foreach(Match match in rgx.Matches(result))
             {
                 int index = match.Index;
-                if (result.ElementAt(index) != ' ')
+                if (result.ElementAt(index + correction) != ' ')
                 {
                     result = result.Insert(match.Index + correction, " ");
                     correction++;
                 }
-                if (result.ElementAt(index + 1) != ' ')
+                if (result.ElementAt(index + 1 + correction) != ' ')
                 {
                     result = result.Insert(match.Index + 1 + correction, " ");
                     correction++;
@@ -275,24 +267,12 @@ public class ObjectsPlacementHandler
         int index = Array.IndexOf(input.Split(' '), substring);
         return index;
     }
+    
 
 
 
 
 
-    public void ShowSentences(string input)
-    {
-        var sentences = SplitSentences(input);
-        foreach (var sentence in sentences)
-        {
-            var partedSentence = TreeParsing(input);
-            //Debug.Log(TreeParsingFull(input));
-            foreach (var part in partedSentence)
-            {
-                Debug.Log(part.Show());
-
-            }
-        }
-    }
+    
 
 }

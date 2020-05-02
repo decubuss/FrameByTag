@@ -137,34 +137,25 @@ public class SceneObject : MonoBehaviour, INameAlternatable
 
         return result;//TODO
     }
-    public List<string> GetStateNames()
+    public Transform GetTransformByBone(string boneName)
     {
-        if (Animator != null)
-        {
-            //TODO: return string
-            return null;
-        }
-        else
-        {
-            return null;
-        }
-    }
+        if(GetAnimator() == null) { Debug.LogError("no bones on: " + gameObject.name); return null; }
 
+        var result = Animator.GetBoneTransform(HumanBodyBones.Head);
+        Debug.Log(result.position);
+        return result;
+    }
     public void SetStateByName(string name)
     {
         string stateName = ""; //TODO: LemmatizeName 
-        if (Animator != null )
+        if (GetAnimator() != null )
         {
-            SetState(name);
-        }
-        else if(gameObject.GetComponent<Animator>())
-        {
-            Animator = gameObject.GetComponent<Animator>();
             SetState(name);
         }
         else
             Debug.LogError( string.Format("no animator on {0}", Name) );
     }
+
     private void SetState(string name)
     {
         if (Animator == null) { return; }
@@ -177,5 +168,14 @@ public class SceneObject : MonoBehaviour, INameAlternatable
         Animator.PlayInFixedTime(name, 0, 0.0f);
         CurrentState = name;
     }
-    
+    private Animator GetAnimator()
+    {
+        if (Animator != null)
+            return Animator;
+        else
+        {
+            Animator = gameObject.GetComponent<Animator>();
+            return Animator;
+        }
+    }
 }
