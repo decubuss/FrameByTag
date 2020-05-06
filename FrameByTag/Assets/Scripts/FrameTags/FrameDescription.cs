@@ -38,17 +38,20 @@ public class FrameDescription : MonoBehaviour
         if (!string.IsNullOrWhiteSpace(DescriptionSource.text) && DescriptionSource.text != RawFrameInput)
         {
             RawFrameInput = DescriptionSource.text;
-            ParsedParts = TreeParsing(RawFrameInput).ToArray();
+            string rawText = Helper.ExcludeCameraTags(RawFrameInput);
+            if (!string.IsNullOrEmpty(rawText))
+                ParsedParts = TreeParsing(rawText).ToArray();
+            else
+                ParsedParts = null;
 
             OnDescriptionChangedEvent?.Invoke(RawFrameInput);
         }
     }
-
     private Parse[] TreeParsing(string input)
     {
         var modelPath = Directory.GetCurrentDirectory() + @"\Models\";
         var parser = new EnglishTreebankParser(modelPath);
-        var treeParsing = parser.DoParse(input);
+        var treeParsing = parser.DoParse(Helper.ExcludeCameraTags(input));
 
         return treeParsing.GetTagNodes();//.Show;
     }

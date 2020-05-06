@@ -48,13 +48,14 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
    
     public void SceneDefaultContentSetup()
     {
-        if (FocusLayer.Contains(AOController.GetObject("Dummy"))) { return; }
+        string defName = "Doll" ;
+        if (FocusLayer.Contains(AOController.GetObject(defName))) { return; }
 
-        var dummy = new ShotElement("Dummy", 1, HierarchyRank.InFocus, "Idle");
+        var dummy = new ShotElement(defName, 1, HierarchyRank.InFocus, "Idle");
         SpawnFocusedObject(dummy);
         LastExecutedTagItemDict = new Dictionary<DescriptionTag, ShotElement>() 
         { 
-            { new DescriptionTag(0, "Dummy", TagType.Item), dummy } 
+            { new DescriptionTag(0, defName, TagType.Item), dummy } 
         };
 
     }

@@ -1501,7 +1501,7 @@ GameObject:
   - component: {fileID: 9094997681223512889}
   - component: {fileID: 7595230760477572079}
   m_Layer: 0
-  m_Name: Dummy
+  m_Name: Doll
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1558,7 +1558,8 @@ MonoBehaviour:
   CurrentState: 
   Keys:
   - dummy
-  Name: Dummy
+  - doll
+  Name: Doll
   _bounds:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
