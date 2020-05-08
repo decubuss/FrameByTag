@@ -5,7 +5,6 @@ using System.Linq;
 
 public class SceneObject : MonoBehaviour, INameAlternatable
 {
-    string SceneObjectType;
     public string[] Poses;
     [SerializeField]
     public string CurrentState;
@@ -142,7 +141,6 @@ public class SceneObject : MonoBehaviour, INameAlternatable
         if(GetAnimator() == null) { Debug.LogError("no bones on: " + gameObject.name); return null; }
 
         var result = Animator.GetBoneTransform(HumanBodyBones.Head);
-        Debug.Log(result.position);
         return result;
     }
     public void SetStateByName(string name)
@@ -156,17 +154,17 @@ public class SceneObject : MonoBehaviour, INameAlternatable
             Debug.LogError( string.Format("no animator on {0}", Name) );
     }
 
-    private void SetState(string name)
+    private void SetState(string stateName)
     {
         if (Animator == null) { return; }
-        if( !Animator.HasState(0, Animator.StringToHash(name))) 
+        if( !Animator.HasState(0, Animator.StringToHash(stateName))) 
         { 
-            Debug.LogError(string.Format("no such state:{0}", name)); 
+            Debug.LogError(string.Format("{0} has not such state:{1}", Name, stateName )); 
             return; 
         }
         Animator.speed = 0f;
-        Animator.PlayInFixedTime(name, 0, 0.0f);
-        CurrentState = name;
+        Animator.PlayInFixedTime(stateName, 0, 0.0f);
+        CurrentState = stateName;
     }
     private Animator GetAnimator()
     {

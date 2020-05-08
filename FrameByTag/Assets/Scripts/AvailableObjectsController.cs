@@ -8,9 +8,9 @@ using System.Linq;
 
 
 
-public class AvailableObjectsController : INameAlternatable
+public class AvailableObjectsController 
 {
-    public List<GameObject> AvailableObjects = new List<GameObject>();
+    public static List<GameObject> AvailableObjects = new List<GameObject>();
 
     public AvailableObjectsController()
     {
@@ -25,7 +25,7 @@ public class AvailableObjectsController : INameAlternatable
         //TODO: add an object, attach SceneObject to it, set name and altranatives. Name of poses if needed
     }
 
-    public Dictionary<string,string> GetAlternateNames()
+    public static Dictionary<string,string> GetAlternateNames()
     {
         var result = new Dictionary<string, string>();
         foreach (var AvblObj in AvailableObjects)

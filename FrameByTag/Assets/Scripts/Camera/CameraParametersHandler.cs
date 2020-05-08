@@ -82,11 +82,28 @@ public static class ShotsStatsExtension
     }
     public static Dictionary<CameraSetter.ShotType, float> SpatialElementsInfluence(this Dictionary<CameraSetter.ShotType, float> shots, Parse[] sentenceParts)
     {
-        return new Dictionary<CameraSetter.ShotType, float>();
+        string[] spatialTypes = new string[] { "IN" };
+        var usefulParts = sentenceParts.Where(x => UsefulTypes.Contains(x.Type)).ToList();
+        if (usefulParts.Count != 0)
+        {
+            shots[CameraSetter.ShotType.ExtremelyLongShot] = 0.1f;//TODO: custom value by different spatials
+            shots[CameraSetter.ShotType.LongShot] = 0.1f;//TODO: custom value by different spatials
+        }
+        return shots;
     }
     public static Dictionary<CameraSetter.ShotType, float> SentenceSubjectsInfluence(this Dictionary<CameraSetter.ShotType, float> shots, Parse[] sentenceParts)
     {
-        return new Dictionary<CameraSetter.ShotType, float>();
+        var sentenceSubjectsCount = 0;
+        
+
+        string[] spatialTypes = new string[] { "IN" };
+        var usefulParts = sentenceParts.Where(x => UsefulTypes.Contains(x.Type)).ToList();
+        if (usefulParts.Count != 0)
+        {
+            shots[CameraSetter.ShotType.ExtremelyLongShot] = 0.1f;//TODO: custom value by different spatials
+            shots[CameraSetter.ShotType.LongShot] = 0.1f;//TODO: custom value by different spatials
+        }
+        return shots;
     }
     
 }
@@ -170,16 +187,15 @@ public class CameraParametersHandler
                                                                                                                   { CameraSetter.ShotType.ExtremelyLongShot, 0.0f } };
         shotPriority = shotPriority.FirstSyntaxElement(parts);
         shotPriority = shotPriority.SyntaxElementsInfluence(parts);
-        //gather location pointers
         shotPriority = shotPriority.SpatialElementsInfluence(parts);
-        //gather sentence subjects
-        //shotPriority = shotPriority.SentenceSubjectsInfluence(parts);
+        shotPriority = shotPriority.SentenceSubjectsInfluence(parts);
 
-        Debug.Log(shotPriority[CameraSetter.ShotType.LongShot]);
-        foreach(var part in parts)
+        #region debug
+        foreach (var part in parts)
         {
-            Debug.Log(string.Format("{0} {1} {2}", part.Type, part.Value, part.Parent));
+            Debug.Log(string.Format("{0} <<{1}>> {2}", part.Type, part.Value, part.Parent));
         }
+        #endregion debug
 
         var resultShot = new ShotParameters(shotPriority.OrderByDescending(x => x.Value).First().Key,
                                             DefaultParams.HAngle,

@@ -13,38 +13,35 @@ using System;
 
 public class ObjectsPlacementHandler
 {
-    private readonly AvailableObjectsController AOController;
     private readonly ObjectsPlacementController OPController;
 
-    private string _lastProcessedInput;
+    public static string LastTaggedInput;
+    private string LastRawInput;
 
     public delegate void OnSentenceProcessed(Dictionary<DescriptionTag, ShotElement> itemTags);
     public static event OnSentenceProcessed OnSentenceProcessedEvent;
-    public ObjectsPlacementHandler(AvailableObjectsController aocontroller, ObjectsPlacementController opcontroller)
+    public ObjectsPlacementHandler(ObjectsPlacementController opcontroller)
     {
-        FrameDescription.OnDescriptionChangedEvent += BreakOnTags;
-        AOController = aocontroller;
+        FrameDescription.OnDescriptionChangedEvent += ShotElementsBreakdown;
         OPController = opcontroller;
-
     }
 
     
-    private void BreakOnTags(string rawinput)
+    private void ShotElementsBreakdown(string rawinput)
     {
-        if(Helper.ExcludeCameraTags(rawinput) == _lastProcessedInput)
+        if(Helper.ExcludeCameraTags(rawinput) == LastRawInput)
         {
             OnSentenceProcessedEvent?.Invoke(null);
             return;
         }
-        _lastProcessedInput = Helper.ExcludeCameraTags(rawinput);
-        if (string.IsNullOrWhiteSpace(_lastProcessedInput))
+        LastRawInput = Helper.ExcludeCameraTags(rawinput);
+        if (string.IsNullOrWhiteSpace(LastRawInput))
         {
             OnSentenceProcessedEvent?.Invoke(null);
             return;
         }
 
-
-            var input = Regex.Replace(_lastProcessedInput, @"[!?.]+", "");
+        var input = Regex.Replace(LastRawInput, @"[!?.]+", "");
         input = AddSpaces(input).ToLower();
 
         //TODO: add dictionary <descriptiontags,elements>
@@ -55,6 +52,7 @@ public class ObjectsPlacementHandler
         processedInput = HandleStates(processedInput, ref tagItemSeq);
         HandleRelations(processedInput, ref tagItemSeq);
 
+        LastTaggedInput = processedInput;
         Debug.Log(processedInput);
         OnSentenceProcessedEvent?.Invoke(tagItemSeq);
     }
@@ -62,7 +60,7 @@ public class ObjectsPlacementHandler
     private string HandleItems(string rawinput, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
         string processedInput = rawinput;
-        var altNames = Helper.DictSortByLength(AOController.GetAlternateNames());
+        var altNames = Helper.DictSortByLength(AvailableObjectsController.GetAlternateNames());
 
         foreach (var altName in altNames)
         {

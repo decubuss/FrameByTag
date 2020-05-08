@@ -58,12 +58,8 @@ public class CameraSetter : MonoBehaviour
         CurrentCamera = Camera.main;
         _baseDetail = new GameObject("BaseDetail").AddComponent<BaseDetail>();
 
-
         ObjectsPlacementController.OnStartupEndedEvent += StartupShot;
-
-        //ObjectsPlacementController.OnSpawnedObjectsChange += ShotOptionsHandle;
         FrameDescription.OnDescriptionChangedEvent += CameraSetReady;
-        //CameraParametersHandler.OnParametersCollectedEvent += UpdateCameraTransform;
     }
     public ShotParameters GetShotParameters()
     {
@@ -80,12 +76,10 @@ public class CameraSetter : MonoBehaviour
         ExecuteParameters(CPHandler.DefaultParams);
         ObjectsPlacementController.OnStartupEndedEvent -= StartupShot;
     }
-
     private void CameraSetReady(string input)
     {
         ObjectsPlacementController.OnContentPreparedEvent += BuildNewShot;
     }
-
     private void DefaultShot(float springArmLenCoef = 0.37f)
     {
         CurrentCamera.transform.position = CalculateCameraPosition(springArmLenCoef);
@@ -138,6 +132,9 @@ public class CameraSetter : MonoBehaviour
         Angle = cross.y < 0 ? -Angle : Angle;
 
         string debugline = "Horizontal angle: ";
+
+        var pow = UnityEngine.Random.Range(0.05f, 1f);
+        float yAngle = Mathf.Lerp(15f, 45f, pow);
         switch (angle)
         {
             case HorizontalAngle.Front:
@@ -153,12 +150,13 @@ public class CameraSetter : MonoBehaviour
                 //which should be parallel to the line of view(Z vector of camera)
                 break;
             case HorizontalAngle.RightAngle:
-                calculatedRot = new Vector3(initalRot.x, 180 - (Angle - 45), initalRot.z); 
+                calculatedRot = new Vector3(initalRot.x, 180 - (Angle - yAngle), initalRot.z); 
                 debugline += angle.ToString();
 
                 break;
             case HorizontalAngle.LeftAngle:
-                calculatedRot = new Vector3(initalRot.x, 180 - (Angle + 45), initalRot.z);//180 - (Angle + 45)
+
+                calculatedRot = new Vector3(initalRot.x, 180 - (Angle + yAngle), initalRot.z);
                 debugline += angle.ToString();
 
                 break;
@@ -362,7 +360,7 @@ public class CameraSetter : MonoBehaviour
 
     public void BuildNewShot()
     {
-        var shotParameters = CPHandler.ShotOptionsHandle(FrameDescription.RawFrameInput);
+        var shotParameters = CPHandler.ShotOptionsHandle(FrameDescription.RawFrameInput);//ObjectsPlacementHandler.LastTaggedInput);//
 
         ExecuteParameters(shotParameters);
     }
@@ -379,7 +377,7 @@ public class CameraSetter : MonoBehaviour
         ApplyThird(shotParameters.Third);
         ApplyVAngle(shotParameters.VAngle);
         ApplyHAngle(shotParameters.HAngle);
-
+        ObjectsPlacementController.OnContentPreparedEvent -= BuildNewShot;
     }
 
     #region shots
@@ -433,11 +431,7 @@ public class CameraSetter : MonoBehaviour
         _shot = ShotType.ExtremelyLongShot;
 
     }
-    //TODO: is it a unique setter for each camera? or is it one object that manages them all (it will be handy to have unique)?
-    //but if it is unique, that means these objects gotta be created by someone 
+    
     #endregion
 
-     
-    
-     
 }

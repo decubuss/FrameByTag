@@ -56,5 +56,4 @@ public static class Helper
         string lemma = lmtz.Lemmatize(word);
         return lemma;
     }
-
 }

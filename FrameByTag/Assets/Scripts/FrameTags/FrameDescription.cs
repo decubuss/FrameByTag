@@ -25,22 +25,24 @@ public class FrameDescription : MonoBehaviour
 
     void Start()
     {
-
         if (DescriptionSource == null)
         {
             DescriptionSource = GameObject.Find("DescriptionField").GetComponent<InputField>();
         }
     }
-
     public void OnInputEnter()
     {
         //TODO: MINOR - make cursor stand there after enter
         if (!string.IsNullOrWhiteSpace(DescriptionSource.text) && DescriptionSource.text != RawFrameInput)
         {
             RawFrameInput = DescriptionSource.text;
-            string rawText = Helper.ExcludeCameraTags(RawFrameInput);
-            if (!string.IsNullOrEmpty(rawText))
-                ParsedParts = TreeParsing(rawText).ToArray();
+            string itemMarkedInput = Helper.ExcludeCameraTags(RawFrameInput);
+            
+            if (!string.IsNullOrEmpty(itemMarkedInput))
+            {
+                itemMarkedInput = MarkItems(itemMarkedInput);
+                ParsedParts = TreeParsing(itemMarkedInput).ToArray();
+            }
             else
                 ParsedParts = null;
 
@@ -55,5 +57,23 @@ public class FrameDescription : MonoBehaviour
 
         return treeParsing.GetTagNodes();//.Show;
     }
+    private string MarkItems(string rawInput)
+    {
+        string result = rawInput;
+        var altNames = Helper.DictSortByLength(AvailableObjectsController.GetAlternateNames());
+        foreach(var name in altNames)
+        {
+            result = result.Replace(name.Key, name.Value);
+        }
 
+        return result;
+    }
+    private string MarkSpatials(string rawInput)
+    {
+        string result = rawInput;
+
+        //we got code here
+
+        return result;
+    }
 }

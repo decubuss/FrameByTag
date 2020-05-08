@@ -35,7 +35,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         SpawnedObjects = new List<string>();
         AOController = new AvailableObjectsController();
         _lastShotElements = new Dictionary<ShotElement, GameObject>();
-        var DescriptionHandler = new ObjectsPlacementHandler(AOController, this);
+        var DescriptionHandler = new ObjectsPlacementHandler(this);
 
         //FrameDescription.OnDescriptionChangedEvent += PlacementHandle;
         ObjectsPlacementHandler.OnSentenceProcessedEvent += SceneByDescriptionSetup;
@@ -213,7 +213,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
         sceneGO.transform.position = transform.position;//TODO: not one but calculated shit
         sceneGO.transform.rotation = transform.rotation;
         AdditiveLayer.Add(sceneGO);
-
+        _lastShotElements.Add(element, sceneGO);
     }
     private void BackgroundSpawn(ShotElement element)
     {
@@ -301,7 +301,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
     
     public Vector3 GetBaseDetailPosition()
     {
-        if (FocusLayer.Count == 0) { Debug.Log("zero objects in focus"); return Vector3.zero; }
+        if (FocusLayer.Count == 0) { Debug.LogError("zero objects in focus"); return Vector3.zero; }
         //get action focus point
 
         Vector3 result = Vector3.zero;
