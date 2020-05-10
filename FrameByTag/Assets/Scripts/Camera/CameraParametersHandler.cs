@@ -126,7 +126,7 @@ public class CameraParametersHandler
             { new string[] { "high" }, "High" },
             { new string[] { "eye level" }, "EyeLevel" },
             { new string[] { "low" }, "Low" },
-            { new string[] { "mouse eye" }, "MouseEye" },
+            { new string[] { "mouse eye", "from below" }, "MouseEye" },
 
             { new string[] { "front" }, "Front" },
             { new string[] { "dead front" }, "DeadFront" },

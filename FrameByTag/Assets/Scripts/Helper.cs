@@ -50,6 +50,11 @@ public static class Helper
         }
         return result;
     }
+    public static string MakeCapitalLetter(this string word)
+    {
+        string result = word.First().ToString().ToUpper() + word.Substring(1);
+        return result;
+    }
     public static string LemmatizeOne(string word)
     {
         ILemmatizer lmtz = new LemmatizerPrebuiltFull(LemmaSharp.LanguagePrebuilt.English);

@@ -5,13 +5,14 @@ using System.Linq;
 using UnityEngine;
 using UnityEditor;
 
-public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
+public class ObjectsPlacementController : MonoBehaviour
 {
 
     //need to store all objects, their states attributes and etc in a way they gotta be callable
     //and here goes functions between them or functions attached to single object
 
     private AvailableObjectsController AOController;
+    private SpatialApplier SpatialApplier;
 
     [SerializeField]
     public List<GameObject> FocusLayer;
@@ -34,6 +35,8 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
     {
         SpawnedObjects = new List<string>();
         AOController = new AvailableObjectsController();
+        SpatialApplier = new SpatialApplier();
+
         _lastShotElements = new Dictionary<ShotElement, GameObject>();
         var DescriptionHandler = new ObjectsPlacementHandler(this);
 
@@ -222,6 +225,9 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
 
     private void MoveBySpatial(DescriptionTag spatial, Dictionary<DescriptionTag, ShotElement> tagItemDict)
     {
+
+
+
         var baseItem = tagItemDict.Where(x => x.Key.Index < spatial.Index && x.Value != null).First().Value;
         var basedItem = tagItemDict.Where(x => x.Key.Index > spatial.Index && x.Value != null).First().Value;
         var resultVector = SpatialManage(spatial.Keyword, AOController.GetSceneObject(baseItem.PropName), AOController.GetSceneObject(basedItem.PropName));
@@ -261,19 +267,7 @@ public class ObjectsPlacementController : MonoBehaviour, INameAlternatable
 
     }
 
-    public Dictionary<string, string> GetAlternateNames()
-    {
-        var initialDict = new Dictionary<string[], string>
-        {
-            { new string[] { "beside", "nearby", "by", "by the" }, "By" },
-            { new string[] { "at the background", "as the background", "as background" }, "Background" },
-            { new string[] { "at the", "in the", "in"}, "In" },
-            { new string[] { "to the", "to"}, "To" }
-        };
-
-        var result = Helper.DictBreakDown(initialDict);
-        return result;
-    }
+    
     
     private void FocusLayerSpawn(string ObjectToPlace)
     {

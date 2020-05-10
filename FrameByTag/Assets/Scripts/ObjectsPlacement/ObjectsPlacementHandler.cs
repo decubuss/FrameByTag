@@ -48,7 +48,7 @@ public class ObjectsPlacementHandler
         var tagItemSeq = new Dictionary<DescriptionTag, ShotElement>();
         
         var processedInput = HandleItems(input, ref tagItemSeq);
-        processedInput = HandleSpatials(processedInput, ref tagItemSeq);
+        processedInput = HHandleSpatials(processedInput, ref tagItemSeq);//TODO: checkout
         processedInput = HandleStates(processedInput, ref tagItemSeq);
         HandleRelations(processedInput, ref tagItemSeq);
 
@@ -80,7 +80,7 @@ public class ObjectsPlacementHandler
     {
         var sceneSequence = itemTags.Keys.ToList();
         string processedInput = input;
-        var sortedSpatials = Helper.DictSortByLength(OPController.GetAlternateNames());
+        var sortedSpatials = Helper.DictSortByLength(SpatialApplier.GetAlternateNames());
 
         foreach(var spatial in sortedSpatials)
         {
@@ -102,6 +102,70 @@ public class ObjectsPlacementHandler
 
         return processedInput;
     }
+
+
+    private string HHandleSpatials(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
+    {
+        var sceneSequence = itemTags.Keys.ToList();
+        string markedSpatials = input;
+        var spatialDict = Helper.DictSortByLength(SpatialApplier.GetAlternateNames());
+
+        foreach (var spatialName in spatialDict)
+        {
+            if (Helper.ContainsTag(markedSpatials, spatialName.Key))//processedInput.Contains(spatial.Key))
+            {
+                markedSpatials = markedSpatials.Replace(spatialName.Key, spatialName.Value);
+                int spatialIndex = Array.IndexOf(markedSpatials.Split(' '), spatialName.Value);
+                var tag = new DescriptionTag(spatialIndex, spatialName.Value, TagType.Spatial);
+
+                var spatial = SpatialApplier.GetSpatial(spatialName.Value);
+
+                var subjectItem = GetSpatialSubject(spatial, itemTags, spatialIndex);
+                var objectItem = GetSpatialObject(spatial, itemTags, spatialIndex, spatialIndex);
+
+                subjectItem.Value.Rank = spatial.SubjectRank;
+                subjectItem.Value.Layer = subjectItem.Value.Rank == HierarchyRank.Addition ? objectItem.Value.Layer : objectItem.Value.Layer + 1;
+                itemTags[subjectItem.Key] = subjectItem.Value;
+
+                //sceneSequence.Add(tag);
+                itemTags.Add(tag, null);
+            }
+        }
+
+        return markedSpatials;
+    }
+    private KeyValuePair<DescriptionTag, ShotElement> GetSpatialSubject(Spatial spatial, Dictionary<DescriptionTag, ShotElement> itemTags, int spatialIndex)
+    {
+
+        var result = spatial.Collocation == ItemCollocation.Object_Spatial_Subject ?
+                    itemTags.Where(x => x.Value != null)
+                                         .Where(x => x.Key.Index > spatialIndex)
+                                         .OrderByDescending(x => x.Key.Index)
+                                         .Last()
+                    :
+                    itemTags.Where(x => x.Value != null)
+                                         .Where(x => x.Key.Index < spatialIndex)
+                                         .OrderByDescending(x => x.Key.Index)
+                                         .First();
+        return result;
+    }
+    private KeyValuePair<DescriptionTag, ShotElement> GetSpatialObject(Spatial spatial, Dictionary<DescriptionTag, ShotElement> itemTags, int spatialIndex, int subjectIndex)
+    {
+
+        var result = spatial.Collocation == ItemCollocation.Object_Spatial_Subject ?
+                    itemTags.Where(x => x.Value != null)
+                                         .Where(x => x.Key.Index < spatialIndex)
+                                         .OrderByDescending(x => x.Key.Index)
+                                         .First()
+                    :
+                    itemTags.Where(x => x.Value != null)
+                                         .Where(x => x.Key.Index < subjectIndex)
+                                         .OrderByDescending(x => x.Key.Index)
+                                         .Last();
+        return result;
+    }
+
+
     private string HandleStates(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
         string result = input;
@@ -119,9 +183,9 @@ public class ObjectsPlacementHandler
             if (parts[i].Type == "VBG")
             {
                 var word = parts[i].Value;//TODO: lemmatize
-                //TODO:  name += parts[i + 1].Label == "RB" || parts[i + 1].Label == "RP" ? parts[i + 1].Text : "";
-                
-                var stateWord = word.First().ToString().ToUpper() + word.Substring(1);
+                                          //TODO:  name += parts[i + 1].Label == "RB" || parts[i + 1].Label == "RP" ? parts[i + 1].Text : "";
+
+                var stateWord = word.MakeCapitalLetter();//word.First().ToString().ToUpper() + word.Substring(1);
                 result = input.Replace(word, stateWord);//TODO: insert Name instead of name
                 int verbIndex = GetWordIndex(result, stateWord);//TODO: retruns -1
                 var prevItems = itemTags.Where(x=>x.Key.TagType == TagType.Item)

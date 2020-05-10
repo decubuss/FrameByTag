@@ -27,7 +27,7 @@ public class CameraSetter : MonoBehaviour
     }
 
     //public Dictionary<string[], string> AlternateName = new Dictionary<string[], string>();
-    private BaseDetail _baseDetail;
+    private BaseDetail BaseDetail;
 
     [HideInInspector]
     public Camera CurrentCamera;
@@ -56,7 +56,7 @@ public class CameraSetter : MonoBehaviour
         OPController = FindObjectOfType<ObjectsPlacementController>();
         CPHandler = new CameraParametersHandler(this);
         CurrentCamera = Camera.main;
-        _baseDetail = new GameObject("BaseDetail").AddComponent<BaseDetail>();
+        BaseDetail = new GameObject("BaseDetail").AddComponent<BaseDetail>();
 
         ObjectsPlacementController.OnStartupEndedEvent += StartupShot;
         FrameDescription.OnDescriptionChangedEvent += CameraSetReady;
@@ -89,7 +89,7 @@ public class CameraSetter : MonoBehaviour
     private void ApplyThird(HorizontalThird third)
     {
         var thirdsGO = CurrentCamera.transform.Find("Thirds");
-        Transform focusTransform = _baseDetail.transform;//OPController.FocusLayer.First().transform;
+        Transform focusTransform = BaseDetail.transform;//OPController.FocusLayer.First().transform;
 
         var relativePos = CurrentCamera.transform.InverseTransformPoint(focusTransform.position);
         thirdsGO.localPosition = new Vector3(0, 0, relativePos.z);
@@ -119,12 +119,12 @@ public class CameraSetter : MonoBehaviour
     }
     private void ApplyHAngle(HorizontalAngle angle)
     {
-        Vector3 calculatedRot = _baseDetail.transform.eulerAngles;
-        Vector3 initalRot = _baseDetail.transform.eulerAngles;
+        Vector3 calculatedRot = BaseDetail.transform.eulerAngles;
+        Vector3 initalRot = BaseDetail.transform.eulerAngles;
 
-        var focus = new Vector3(_baseDetail.transform.forward.x, 0, _baseDetail.transform.forward.z);//_baseDetail.transform.forward.z
+        var focus = new Vector3(BaseDetail.transform.forward.x, 0, BaseDetail.transform.forward.z);//_baseDetail.transform.forward.z
 
-        var camera = _baseDetail.transform.position - CurrentCamera.transform.position ;
+        var camera = BaseDetail.transform.position - CurrentCamera.transform.position ;
         camera = new Vector3(camera.x, 0, camera.z);
 
         float Angle = Vector3.Angle(focus, camera);
@@ -166,12 +166,12 @@ public class CameraSetter : MonoBehaviour
         //Debug.Log(debugline);
         _horizontalAngle = angle;
         calculatedRot.y = 180 - Angle > 180f ? calculatedRot.y * -1 : calculatedRot.y;
-        _baseDetail.transform.eulerAngles = calculatedRot;
+        BaseDetail.transform.eulerAngles = calculatedRot;
     }
     private void ApplyVAngle(VerticalAngle angle)
     {
-        var CalculatedRot = _baseDetail.transform.eulerAngles;
-        Vector3 initialRot = _baseDetail.transform.eulerAngles;
+        var CalculatedRot = BaseDetail.transform.eulerAngles;
+        Vector3 initialRot = BaseDetail.transform.eulerAngles;
         string debugline = "Vertical angle: ";
         switch (angle)
         {
@@ -198,7 +198,7 @@ public class CameraSetter : MonoBehaviour
         }
         //Debug.Log(debugline);
         _verticalAngle = angle;
-        _baseDetail.transform.eulerAngles = CalculatedRot;
+        BaseDetail.transform.eulerAngles = CalculatedRot;
     }
     private Vector3 CalculateCameraPosition(float springArmCoef)
     {
@@ -366,7 +366,7 @@ public class CameraSetter : MonoBehaviour
     }
     public void ExecuteParameters(ShotParameters shotParameters)
     {
-        _baseDetail.UpdatePosition();
+        BaseDetail.UpdatePosition();
 
         if (shotParameters.ShotType == ShotType.DefaultShot)
             DefaultShot();
