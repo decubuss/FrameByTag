@@ -7,27 +7,19 @@ using System.IO;
 using System.Linq;
 
 
-
 public class AvailableObjectsController 
 {
     public static List<GameObject> AvailableObjects = new List<GameObject>();
-
+    private static Dictionary<string, string> AvailableNamesDict;
     public AvailableObjectsController()
     {
         AvailableObjects = AvailableObjectsHarvest();
-
     }
-    
-
-    public void Add(GameObject SceneObject)
-    {
-
-        //TODO: add an object, attach SceneObject to it, set name and altranatives. Name of poses if needed
-    }
-
     public static Dictionary<string,string> GetAlternateNames()
     {
-        var result = new Dictionary<string, string>();
+        if(AvailableNamesDict != null && AvailableNamesDict.Count != 0) { return AvailableNamesDict; }
+
+        AvailableNamesDict = new Dictionary<string, string>();
         foreach (var AvblObj in AvailableObjects)
         {
             var sceneObjComponent = AvblObj.GetComponent<SceneObject>();
@@ -35,12 +27,12 @@ public class AvailableObjectsController
             {
                 foreach (var item in sceneObjComponent.GetAlternateNames())
                 {
-                    result.Add(item.Key,item.Value);
+                    AvailableNamesDict.Add(item.Key,item.Value);
                 }
             }
         }
 
-        return result;
+        return AvailableNamesDict;
     }
     private List<GameObject> AvailableObjectsHarvest()
     {
@@ -59,7 +51,6 @@ public class AvailableObjectsController
 
         return availableObjects;
     }
-
     public GameObject GetObject(string name)
     {
         if (AvailableObjects.Count == 0) { Debug.LogError("No objects available smh"); return new GameObject(); }
@@ -77,24 +68,28 @@ public class AvailableObjectsController
         return this.GetObject(name).GetComponent<SceneObject>();
     }
 
-    private void ObjectInitialization()
+    public void Add(GameObject SceneObject)
     {
-        //custom import:
-        //get an fbx
-        //if slots for animation are filled - donload them
-        //get skinned mesh or mesh 
-        //apply controller with states of animations if skinned
-        //apply zones (boo hoo)
+
+        //TODO: add an object, attach SceneObject to it, set name and altranatives. Name of poses if needed
     }
     public List<string> GetObjectsNames()
     {
         List<string> result = new List<string>();
         foreach (var sceneObject in AvailableObjects)
         {
-            result.AddRange(sceneObject.GetComponent<SceneObject>().Keys);
+            result.AddRange(sceneObject.GetComponent<SceneObject>().AltNames);
         }
 
         return result;
     }
-
+    //private void ObjectInitialization()
+    //{
+    //custom import:
+    //get an fbx
+    //if slots for animation are filled - donload them
+    //get skinned mesh or mesh 
+    //apply controller with states of animations if skinned
+    //apply zones (boo hoo)
+    //}
 }

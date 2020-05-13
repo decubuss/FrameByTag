@@ -69,6 +69,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7595230760477572079, guid: 03aa3501b2b18de41bb16a1ed568f7de,
         type: 3}
+      propertyPath: AltNames.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7595230760477572079, guid: 03aa3501b2b18de41bb16a1ed568f7de,
+        type: 3}
       propertyPath: Name
       value: Lummy
       objectReference: {fileID: 0}
@@ -81,6 +86,16 @@ PrefabInstance:
         type: 3}
       propertyPath: Keys.Array.data[1]
       value: lum
+      objectReference: {fileID: 0}
+    - target: {fileID: 7595230760477572079, guid: 03aa3501b2b18de41bb16a1ed568f7de,
+        type: 3}
+      propertyPath: AltNames.Array.data[0]
+      value: altman
+      objectReference: {fileID: 0}
+    - target: {fileID: 7595230760477572079, guid: 03aa3501b2b18de41bb16a1ed568f7de,
+        type: 3}
+      propertyPath: AltNames.Array.data[1]
+      value: lummy
       objectReference: {fileID: 0}
     - target: {fileID: 9094997681219423737, guid: 03aa3501b2b18de41bb16a1ed568f7de,
         type: 3}

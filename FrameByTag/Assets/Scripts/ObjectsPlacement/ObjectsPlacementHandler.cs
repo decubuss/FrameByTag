@@ -53,7 +53,7 @@ public class ObjectsPlacementHandler
         HandleRelations(processedInput, ref tagItemSeq);
 
         LastTaggedInput = processedInput;
-        Debug.Log(processedInput);
+        //Debug.Log(processedInput);
         OnSentenceProcessedEvent?.Invoke(tagItemSeq);
     }
 
@@ -69,8 +69,8 @@ public class ObjectsPlacementHandler
                 processedInput = processedInput.Replace(altName.Key, altName.Value);
                 int index = Array.IndexOf(processedInput.Split(' '), altName.Value);
                 var tag = new DescriptionTag(index, altName.Value, TagType.Item);
-                itemTags.Add(tag, new ShotElement(altName.Value,rank: HierarchyRank.InFocus));
-
+                Debug.Log(processedInput);
+                itemTags.Add(tag, new ShotElement(altName.Value, rank: ShotHierarchyRank.InFocus));
             }
         }
 
@@ -92,7 +92,7 @@ public class ObjectsPlacementHandler
 
                 List<string> spatials = new List<string>() { "By" };
                 var updatedItem = itemTags.Where(x => x.Value != null).Where(x => x.Key.Index > index).First();
-                updatedItem.Value.Rank = spatials.Contains(spatial.Value) ? HierarchyRank.Addition : updatedItem.Value.Rank;
+                updatedItem.Value.Rank = spatials.Contains(spatial.Value) ? ShotHierarchyRank.Addition : updatedItem.Value.Rank;
                 itemTags[updatedItem.Key] = updatedItem.Value;
 
                 //sceneSequence.Add(tag);
@@ -102,8 +102,6 @@ public class ObjectsPlacementHandler
 
         return processedInput;
     }
-
-
     private string HHandleSpatials(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
         var sceneSequence = itemTags.Keys.ToList();
@@ -120,51 +118,22 @@ public class ObjectsPlacementHandler
 
                 var spatial = SpatialApplier.GetSpatial(spatialName.Value);
 
-                var subjectItem = GetSpatialSubject(spatial, itemTags, spatialIndex);
-                var objectItem = GetSpatialObject(spatial, itemTags, spatialIndex, spatialIndex);
+                var subjectItemGroup = spatial.FindSpatialSubject(itemTags, spatialIndex);
+                var objectItemGroup = spatial.FindSpatialObject(itemTags, spatialIndex, spatialIndex);
 
-                subjectItem.Value.Rank = spatial.SubjectRank;
-                subjectItem.Value.Layer = subjectItem.Value.Rank == HierarchyRank.Addition ? objectItem.Value.Layer : objectItem.Value.Layer + 1;
-                itemTags[subjectItem.Key] = subjectItem.Value;
+                subjectItemGroup.Value.Rank = spatial.SubjectRank;
+                subjectItemGroup.Value.Layer = subjectItemGroup.Value.Rank == ShotHierarchyRank.Addition ? 
+                                                                                objectItemGroup.First().Value.Layer : 
+                                                                                objectItemGroup.First().Value.Layer + 1;
+                itemTags[subjectItemGroup.Key] = subjectItemGroup.Value;
 
-                //sceneSequence.Add(tag);
                 itemTags.Add(tag, null);
             }
         }
 
         return markedSpatials;
     }
-    private KeyValuePair<DescriptionTag, ShotElement> GetSpatialSubject(Spatial spatial, Dictionary<DescriptionTag, ShotElement> itemTags, int spatialIndex)
-    {
-
-        var result = spatial.Collocation == ItemCollocation.Object_Spatial_Subject ?
-                    itemTags.Where(x => x.Value != null)
-                                         .Where(x => x.Key.Index > spatialIndex)
-                                         .OrderByDescending(x => x.Key.Index)
-                                         .Last()
-                    :
-                    itemTags.Where(x => x.Value != null)
-                                         .Where(x => x.Key.Index < spatialIndex)
-                                         .OrderByDescending(x => x.Key.Index)
-                                         .First();
-        return result;
-    }
-    private KeyValuePair<DescriptionTag, ShotElement> GetSpatialObject(Spatial spatial, Dictionary<DescriptionTag, ShotElement> itemTags, int spatialIndex, int subjectIndex)
-    {
-
-        var result = spatial.Collocation == ItemCollocation.Object_Spatial_Subject ?
-                    itemTags.Where(x => x.Value != null)
-                                         .Where(x => x.Key.Index < spatialIndex)
-                                         .OrderByDescending(x => x.Key.Index)
-                                         .First()
-                    :
-                    itemTags.Where(x => x.Value != null)
-                                         .Where(x => x.Key.Index < subjectIndex)
-                                         .OrderByDescending(x => x.Key.Index)
-                                         .Last();
-        return result;
-    }
-
+    
 
     private string HandleStates(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
@@ -194,7 +163,7 @@ public class ObjectsPlacementHandler
                 {
                     itemTags.FirstOrDefault(x => x.Value.PropName == prevItem.Key.Keyword).Value.State = stateWord;
                     itemTags.FirstOrDefault(x => x.Value.PropName == prevItem.Key.Keyword).Value.Layer = layer;
-                    itemTags.FirstOrDefault(x => x.Value.PropName == prevItem.Key.Keyword).Value.Rank = HierarchyRank.InFocus;
+                    itemTags.FirstOrDefault(x => x.Value.PropName == prevItem.Key.Keyword).Value.Rank = ShotHierarchyRank.InFocus;
                     //TODO: just store and assign
                 }
                 
@@ -210,13 +179,13 @@ public class ObjectsPlacementHandler
     {
         if (itemTags.Values.Count >= 1) 
         { 
-            itemTags.Values.First().Rank = HierarchyRank.InFocus;
+            itemTags.Values.First().Rank = ShotHierarchyRank.InFocus;
             itemTags.Values.First().Layer = 1; 
         }
 
         foreach(var element in itemTags.Values.Where(x=> x != null))
         {
-            element.Rank = element.Rank == HierarchyRank.Default ? HierarchyRank.Addition : element.Rank;
+            element.Rank = element.Rank == ShotHierarchyRank.Default ? ShotHierarchyRank.Addition : element.Rank;
             element.Layer = 1;
         }
         

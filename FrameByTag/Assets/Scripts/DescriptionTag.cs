@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum TagType { Spatial, Item, Referencer, Action}
+public enum TagType { Spatial, Item, Action}
 
 public class DescriptionTag
 {

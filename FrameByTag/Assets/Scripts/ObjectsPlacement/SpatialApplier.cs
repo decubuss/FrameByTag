@@ -8,15 +8,15 @@ public class SpatialApplier
     public static SpatialApplier _instance;
     private static List<Spatial> Spatials = new List<Spatial>()
     {
-        new Spatial("By", new string[] { "beside", "by", "by the", "next to" }, ItemCollocation.Object_Spatial_Subject, HierarchyRank.Addition),
-        new Spatial("In", new string[] {"at the", "in the", "in"}, ItemCollocation.Object_Spatial_Subject, HierarchyRank.Addition),
-        new Spatial("To", new string[] { "to the", "into" }, ItemCollocation.Object_Spatial_Subject, HierarchyRank.InFocus),
-        new Spatial("With", new string[] { "to" }, ItemCollocation.Object_Spatial_Subject, HierarchyRank.InFocus),
-        new Spatial("Nearby", new string[] { "nearby" }, ItemCollocation.Object_Subject_Spatial, HierarchyRank.InFocus),
-        new Spatial("Between", new string[] { "between"}, ItemCollocation.Object_Spatial_Subject, HierarchyRank.InFocus),
-        new Spatial("Front", new string[] { "in front of" }, ItemCollocation.Object_Spatial_Subject, HierarchyRank.Addition),
-        new Spatial("Behind", new string[] { "behind the" }, ItemCollocation.Object_Spatial_Subject, HierarchyRank.Addition),
-        new Spatial("After", new string[] {"behind", "after"}, ItemCollocation.Object_Subject_Spatial, HierarchyRank.InFocus)
+        new Spatial("By", new string[] { "beside", "by", "by the", "next to" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
+        new Spatial("In", new string[] {"at the", "in the", "in"}, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
+        new Spatial("To", new string[] { "to the", "into" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.InFocus),
+        new Spatial("With", new string[] { "to" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.InFocus),
+        new Spatial("Nearby", new string[] { "nearby" }, ItemCollocation.Object_Subject_Spatial, ShotHierarchyRank.InFocus),
+        new Spatial("Between", new string[] { "between"}, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.InFocus),
+        new Spatial("Front", new string[] { "in front of" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
+        new Spatial("Behind", new string[] { "behind the" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
+        new Spatial("After", new string[] {"behind", "after"}, ItemCollocation.Object_Subject_Spatial, ShotHierarchyRank.InFocus)
 
     };
     private static Dictionary<string[], string> AltNames = new Dictionary<string[], string>();
@@ -35,15 +35,30 @@ public class SpatialApplier
 
         return result;
     }
-    public static void Apply(string spatialName)
+    public void Apply(DescriptionTag spatialTag, ref Dictionary<ShotElement, GameObject> spawnedElements, Dictionary<DescriptionTag, ShotElement> tagItemDict)
     {
-        switch (spatialName)
+        var spatial = GetSpatial(spatialTag.Keyword);
+        var spatialSubjGroup = spatial.FindSpatialSubject(tagItemDict, spatialTag.Index);
+        var spatialObjGroup = spatial.FindSpatialObject(tagItemDict, spatialTag.Index, spatialSubjGroup.Key.Index).ToDictionary(g => g.Key, g => g.Value);//.ToDictionary<DescriptionTag>();
+
+        List<GameObject> goObjGroup = new List<GameObject>();
+        foreach(var obj in spatialObjGroup)
+        {
+            if(spawnedElements.ContainsKey(obj.Value))
+                goObjGroup.Add(spawnedElements[obj.Value]);
+        }
+
+        var goSubjGroup = spawnedElements[spatialSubjGroup.Value];
+
+        switch (spatial.Name)
         {
             case "By":
+                ObjectBySubject(goObjGroup, goSubjGroup);
                 break;
             case "In":
                 break;
             case "To":
+                ObjectTosubject(goObjGroup, goSubjGroup);
                 break;
             case "With":
                 break;
@@ -58,6 +73,7 @@ public class SpatialApplier
             case "After":
                 break;
             default:
+                Debug.LogError("yo pierre da shit is fucked - something is tryna to look like a spatial but it is not");
                 break;
         }
     }
@@ -67,5 +83,21 @@ public class SpatialApplier
         return Spatials.Find(x => x.Name == spatialName);
     }
 
-    private void AverageLayerPosition() { }
+
+    public void ObjectBySubject(List<GameObject> objectPointer, GameObject subjectPointer)
+    {
+        Vector3 objectPos = ObjectsPlacementController.GroupAveragePos(objectPointer);
+        Bounds absoluteBounds = ObjectsPlacementController.GroupBounds(objectPointer);
+        Vector3 objectDir = ObjectsPlacementController.GroupAverageDirection(objectPointer);
+
+        subjectPointer.transform.position = (-objectDir * (absoluteBounds.size.z + subjectPointer.GetComponent<SceneObject>().Bounds.size.z)/2) + objectPos;
+    }
+    public void ObjectTosubject(List<GameObject> objectPointer, GameObject subjectPointer)
+    {
+        Vector3 objectPos = ObjectsPlacementController.GroupAveragePos(objectPointer);
+        Bounds absoluteBounds = ObjectsPlacementController.GroupBounds(objectPointer);
+        Vector3 objectDir = ObjectsPlacementController.GroupAverageDirection(objectPointer);
+
+        subjectPointer.transform.position = (objectDir * (absoluteBounds.size.z + subjectPointer.GetComponent<SceneObject>().Bounds.size.y) / 2) + objectPos;
+    }
 }

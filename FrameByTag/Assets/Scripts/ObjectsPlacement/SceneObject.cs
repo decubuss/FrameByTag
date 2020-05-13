@@ -5,12 +5,11 @@ using System.Linq;
 
 public class SceneObject : MonoBehaviour, INameAlternatable
 {
-    public string[] Poses;
     [SerializeField]
     public string CurrentState;
     private Animator Animator;
 
-    public string[] Keys;
+    public string[] AltNames;
     public string Name;
     //{
     //    get
@@ -72,8 +71,6 @@ public class SceneObject : MonoBehaviour, INameAlternatable
         }
     }
 
-
-
     public void Start()
     {
         Animator = gameObject.GetComponent<Animator>();
@@ -83,7 +80,7 @@ public class SceneObject : MonoBehaviour, INameAlternatable
             Name = "";
             for(int i = 0; i < parts.Length; i++)
             {
-                parts[i] = char.ToUpper(parts[i].First()) + parts[i].Remove(0, 1);
+                parts[i] = Helper.MakeCapitalLetter(parts[i]);// char.ToUpper(parts[i].First()) + parts[i].Remove(0, 1);
                 Name += parts[i];
             }
         }
@@ -99,7 +96,7 @@ public class SceneObject : MonoBehaviour, INameAlternatable
         }
     }
 
-    public Bounds GetObjectBounds()
+    private Bounds GetObjectBounds()
     {
         Bounds resultBounds;
         if (gameObject.GetComponent<MeshFilter>() != null)
@@ -118,18 +115,10 @@ public class SceneObject : MonoBehaviour, INameAlternatable
         resultBounds = new Bounds(resultBounds.center, vector);
         return resultBounds;
     }
-    public bool HasState(string name)
-    {
-        if (Animator != null)
-        {
-            return Animator.HasState(0, Animator.StringToHash(name));
-        }
-        return false;
-    }
     public Dictionary<string,string> GetAlternateNames()
     {
         Dictionary<string, string> result = new Dictionary<string, string>();
-        foreach(var key in Keys.OrderByDescending(x => x.Length))
+        foreach(var key in AltNames.OrderByDescending(x => x.Length))
         {
             result.Add(key, Name);
         }

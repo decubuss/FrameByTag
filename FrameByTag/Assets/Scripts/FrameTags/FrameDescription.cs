@@ -14,7 +14,7 @@ using System.IO;
 
 public class FrameDescription : MonoBehaviour
 {
-    public static FrameDescription instance;
+    //public static FrameDescription _instance;
     public InputField DescriptionSource;
 
     public static string RawFrameInput;

@@ -454,17 +454,17 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4702117080854199700}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aefd9dc821a38d64aad740b490c1759a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Keys:
-  - male
-  - man
-  - guy
+  CurrentState: 
+  AltNames: []
   Name: Male
-  Poses: []
+  _bounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!1 &4702139024007187506
 GameObject:
   m_ObjectHideFlags: 0

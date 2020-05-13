@@ -136,9 +136,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aefd9dc821a38d64aad740b490c1759a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Poses: []
   CurrentState: 
-  Keys:
+  AltNames:
+  - fence
   - wall
   Name: Wall
   _bounds:
