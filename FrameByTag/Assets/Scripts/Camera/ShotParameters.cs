@@ -4,16 +4,18 @@ using UnityEngine;
 
 public struct ShotParameters
 {
-    public CameraSetter.ShotType ShotType;
-    public CameraSetter.HorizontalAngle HAngle;
-    public CameraSetter.VerticalAngle VAngle;
-    public CameraSetter.HorizontalThird Third;
-    public ShotParameters(CameraSetter.ShotType shotType, CameraSetter.HorizontalAngle hAngle, CameraSetter.VerticalAngle vAngle, CameraSetter.HorizontalThird third)
+    public ShotType ShotType;
+    public HorizontalAngle HAngle;
+    public VerticalAngle VAngle;
+    public HorizontalThird Third;
+    public bool isfromBehind;
+    public ShotParameters(ShotType shotType, HorizontalAngle hAngle, VerticalAngle vAngle, HorizontalThird third, bool fromBehind = false)
     {
         ShotType = shotType;
         HAngle = hAngle;
         VAngle = vAngle;
         Third = third;
+        isfromBehind = fromBehind;
     }
 
    

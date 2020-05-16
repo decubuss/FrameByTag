@@ -5,13 +5,12 @@ using System.Linq;
 
 public class SpatialApplier 
 {
-    public static SpatialApplier _instance;
     private static List<Spatial> Spatials = new List<Spatial>()
     {
         new Spatial("By", new string[] { "beside", "by", "by the", "next to" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
         new Spatial("In", new string[] {"at the", "in the", "in"}, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
         new Spatial("To", new string[] { "to the", "into" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.InFocus),
-        new Spatial("With", new string[] { "to" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.InFocus),
+        new Spatial("With", new string[] { "to", "with" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.InFocus),
         new Spatial("Nearby", new string[] { "nearby" }, ItemCollocation.Object_Subject_Spatial, ShotHierarchyRank.InFocus),
         new Spatial("Between", new string[] { "between"}, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.InFocus),
         new Spatial("Front", new string[] { "in front of" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
@@ -34,6 +33,11 @@ public class SpatialApplier
         var result = Helper.DictBreakDown(AltNames);
 
         return result;
+    }
+    public static Spatial GetSpatial(string spatialName)
+    {
+        if (Spatials.Count == 0) { Debug.LogError("there is no spatials smh"); return null; }
+        return Spatials.Find(x => x.Name == spatialName);
     }
     public void Apply(DescriptionTag spatialTag, ref Dictionary<ShotElement, GameObject> spawnedElements, Dictionary<DescriptionTag, ShotElement> tagItemDict)
     {
@@ -58,9 +62,10 @@ public class SpatialApplier
             case "In":
                 break;
             case "To":
-                ObjectTosubject(goObjGroup, goSubjGroup);
+                ObjectToSubject(goObjGroup, goSubjGroup);
                 break;
             case "With":
+                ObjectWithSubject(goObjGroup, goSubjGroup);
                 break;
             case "Nearby":
                 break;
@@ -77,11 +82,7 @@ public class SpatialApplier
                 break;
         }
     }
-    public static Spatial GetSpatial(string spatialName)
-    {
-        if(Spatials.Count == 0) { Debug.LogError("there is no spatials smh"); return null; }
-        return Spatials.Find(x => x.Name == spatialName);
-    }
+    
 
 
     public void ObjectBySubject(List<GameObject> objectPointer, GameObject subjectPointer)
@@ -92,12 +93,31 @@ public class SpatialApplier
 
         subjectPointer.transform.position = (-objectDir * (absoluteBounds.size.z + subjectPointer.GetComponent<SceneObject>().Bounds.size.z)/2) + objectPos;
     }
-    public void ObjectTosubject(List<GameObject> objectPointer, GameObject subjectPointer)
+    public void ObjectToSubject(List<GameObject> objectsPointer, GameObject subjectPointer)
     {
-        Vector3 objectPos = ObjectsPlacementController.GroupAveragePos(objectPointer);
-        Bounds absoluteBounds = ObjectsPlacementController.GroupBounds(objectPointer);
-        Vector3 objectDir = ObjectsPlacementController.GroupAverageDirection(objectPointer);
+        Vector3 objectPos = ObjectsPlacementController.GroupAveragePos(objectsPointer);
+        Bounds absoluteBounds = ObjectsPlacementController.GroupBounds(objectsPointer);
+        Vector3 objectDir = ObjectsPlacementController.GroupAverageDirection(objectsPointer);
+
+        
+        subjectPointer.transform.position = (objectDir * (absoluteBounds.size.z + subjectPointer.GetComponent<SceneObject>().Bounds.size.y) / 2) + objectPos;
+        foreach (var obj in objectsPointer)
+        {
+            obj.transform.rotation = ObjectsPlacementController.RotationToDirection(obj.transform.position, subjectPointer.transform.position);
+        }
+        //subjectPointer.transform.rotation = ()
+    }
+    public void ObjectWithSubject(List<GameObject> objectsPointer, GameObject subjectPointer)
+    {
+        Vector3 objectPos = ObjectsPlacementController.GroupAveragePos(objectsPointer);
+        Bounds absoluteBounds = ObjectsPlacementController.GroupBounds(objectsPointer);
+        Vector3 objectDir = ObjectsPlacementController.GroupAverageDirection(objectsPointer);
 
         subjectPointer.transform.position = (objectDir * (absoluteBounds.size.z + subjectPointer.GetComponent<SceneObject>().Bounds.size.y) / 2) + objectPos;
+        foreach (var obj in objectsPointer)
+        {
+            obj.transform.rotation = ObjectsPlacementController.RotationToDirection(obj.transform.position, subjectPointer.transform.position);
+        }
+        subjectPointer.transform.rotation = ObjectsPlacementController.RotationToDirection(subjectPointer.transform.position, objectPos);
     }
 }

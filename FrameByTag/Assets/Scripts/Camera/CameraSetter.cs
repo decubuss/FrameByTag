@@ -4,29 +4,25 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+public enum ShotType
+{
+    LongShot, CloseShot, MediumShot, ExtremelyLongShot, DefaultShot
+}
+public enum HorizontalThird
+{
+    FirstThird, Center, LastThird
+}
+public enum VerticalAngle
+{
+    BirdsEye, High, EyeLevel, Low, MouseEye
+}
+public enum HorizontalAngle
+{
+    RightAngle, LeftAngle, Front, DeadFront
+}
 
 public class CameraSetter : MonoBehaviour
 {
-    //public static CameraSetter instance;
-
-    public enum ShotType
-    {
-        LongShot, CloseShot, MediumShot, ExtremelyLongShot, DefaultShot
-    }
-    public enum HorizontalThird
-    {
-        FirstThird, Center, LastThird, Auto
-    }
-    public enum VerticalAngle
-    {
-        BirdsEye, High, EyeLevel, Low, MouseEye
-    }
-    public enum HorizontalAngle
-    {
-        RightAngle, LeftAngle, Front, DeadFront
-    }
-
-    //public Dictionary<string[], string> AlternateName = new Dictionary<string[], string>();
     private BaseDetail BaseDetail;
 
     [HideInInspector]
@@ -34,9 +30,6 @@ public class CameraSetter : MonoBehaviour
     private ObjectsPlacementController OPController;
     private CameraParametersHandler CPHandler;
     private FrameAttributes Frame;
-
-    private Vector3 RightObjectsLimit;//
-    private Vector3 LeftObjectsLimit;//
 
     private Vector3 ShotInitialPos;
 
@@ -48,7 +41,8 @@ public class CameraSetter : MonoBehaviour
     private VerticalAngle _verticalAngle;
     [SerializeField]
     private ShotType _shot;
-
+    [SerializeField]
+    private bool isFromBehind;
     // Start is called before the first frame update
     void Start()
     {
@@ -117,7 +111,7 @@ public class CameraSetter : MonoBehaviour
         CurrentCamera.transform.position = new Vector3(Mathf.Abs(thirdPoint.x - focusTransform.position.x), 0, 0) * Direction + ShotInitialPos;
 
     }
-    private void ApplyHAngle(HorizontalAngle angle)
+    private void ApplyHAngle(HorizontalAngle angle, float pow = 1)
     {
         Vector3 calculatedRot = BaseDetail.transform.eulerAngles;
         Vector3 initalRot = BaseDetail.transform.eulerAngles;
@@ -130,18 +124,15 @@ public class CameraSetter : MonoBehaviour
         float Angle = Vector3.Angle(focus, camera);
         Vector3 cross = Vector3.Cross(focus, camera);
         Angle = cross.y < 0 ? -Angle : Angle;
-
         string debugline = "Horizontal angle: ";
 
-        var pow = UnityEngine.Random.Range(0.05f, 1f);
+        //var pow = UnityEngine.Random.Range(0.05f, 1f);
         float yAngle = Mathf.Lerp(15f, 45f, pow);
         switch (angle)
         {
             case HorizontalAngle.Front:
                 calculatedRot = new Vector3(initalRot.x, 180 - Angle, initalRot.z);//_baseDetail.transform.rotation.x
-
                 debugline += angle.ToString();
-                
                 break;
             case HorizontalAngle.DeadFront:
                 calculatedRot.y = Quaternion.Euler(-30f, 0, 0).x;
@@ -162,13 +153,13 @@ public class CameraSetter : MonoBehaviour
                 break;
             
         }
-
-        //Debug.Log(debugline);
         _horizontalAngle = angle;
-        calculatedRot.y = 180 - Angle > 180f ? calculatedRot.y * -1 : calculatedRot.y;
+        calculatedRot = isFromBehind ? new Vector3(calculatedRot.x, calculatedRot.y + 180, calculatedRot.z) 
+                                     : calculatedRot;
+        //calculatedRot.y = 180 - Angle > 180f ? calculatedRot.y * -1 : calculatedRot.y;
         BaseDetail.transform.eulerAngles = calculatedRot;
     }
-    private void ApplyVAngle(VerticalAngle angle)
+    private void ApplyVAngle(VerticalAngle angle, float pow = 1)
     {
         var CalculatedRot = BaseDetail.transform.eulerAngles;
         Vector3 initialRot = BaseDetail.transform.eulerAngles;
@@ -321,46 +312,9 @@ public class CameraSetter : MonoBehaviour
         return maxHeight;
     }
     #endregion
-    private void CalcFocusedObjectsBounds()
-    {
-        CalcFrameBounds();
-
-        if (Frame.LeftCorner != null && Frame.RightCorner != null)
-        {
-            float ObjectsVariationsWidth = Vector3.Distance(Frame.LeftCorner, Frame.RightCorner) - GetFObjectsWidth();
-            Vector3 WidthCenter = new Vector3(Frame.CenterOfFrame.x, 0, Frame.CenterOfFrame.z);
-            RightObjectsLimit = WidthCenter + (Frame.RightCorner - WidthCenter).normalized * (ObjectsVariationsWidth / 2);
-            LeftObjectsLimit = WidthCenter + (Frame.LeftCorner - WidthCenter).normalized * (ObjectsVariationsWidth / 2);
-        }
-        //else but not neccessary
-    }
-    private void CalcFrameBounds()
-    {
-        var LeftCorner = CurrentCamera.ViewportToWorldPoint(new Vector3(1, 0, CurrentCamera.nearClipPlane));
-        var Rightcorner = CurrentCamera.ViewportToWorldPoint(new Vector3(0, 0, CurrentCamera.nearClipPlane));
-
-        Ray Rightray = new Ray(CurrentCamera.transform.position, (LeftCorner - CurrentCamera.transform.position).normalized);
-        Ray Leftray = new Ray(CurrentCamera.transform.position, (Rightcorner - CurrentCamera.transform.position).normalized);
-
-        RaycastHit Rhit = new RaycastHit();
-        RaycastHit Lhit = new RaycastHit();
-
-        if (Physics.Raycast(Rightray, out Rhit, 100000))
-        {
-            Frame.RightCorner = Rhit.point;
-        }
-        if (Physics.Raycast(Leftray, out Lhit, 100000))
-        {
-            Frame.LeftCorner = Lhit.point;
-        }
-
-        //put a middle dot down, then ray to center of viewtoworld point
-        //now you have half-height of screen
-    }
-
     public void BuildNewShot()
     {
-        var shotParameters = CPHandler.ShotOptionsHandle(FrameDescription.RawFrameInput);//ObjectsPlacementHandler.LastTaggedInput);//
+        var shotParameters = CPHandler.ShotParametersHandle(FrameDescription.RawFrameInput);//ObjectsPlacementHandler.LastTaggedInput);//
 
         ExecuteParameters(shotParameters);
     }
@@ -373,6 +327,7 @@ public class CameraSetter : MonoBehaviour
         else
             this.SendMessage(shotParameters.ShotType.ToString());
 
+        isFromBehind = shotParameters.isfromBehind;
         _shot = shotParameters.ShotType;
         ApplyThird(shotParameters.Third);
         ApplyVAngle(shotParameters.VAngle);
@@ -381,7 +336,6 @@ public class CameraSetter : MonoBehaviour
     }
 
     #region shots
-
     public void CloseShot()
     {
         DefaultShot(2.1f);
@@ -431,7 +385,6 @@ public class CameraSetter : MonoBehaviour
         _shot = ShotType.ExtremelyLongShot;
 
     }
-    
     #endregion
 
 }

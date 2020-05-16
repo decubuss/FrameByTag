@@ -12,7 +12,6 @@ public class BaseDetail : MonoBehaviour
     {
         ControlledCamera = FindObjectOfType<CameraSetter>().CurrentCamera;
     }
-
     public void UpdatePosition()
     {
         if (!gameObject) { Debug.Log("no detail here"); return; }

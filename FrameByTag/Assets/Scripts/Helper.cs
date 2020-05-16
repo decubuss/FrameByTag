@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System;
 
 using LemmaSharp;
+using System.Text.RegularExpressions;
 public static class Helper
 {
     public static Dictionary<string, string> DictSortByLength(Dictionary<string, string> dict)
@@ -36,6 +38,7 @@ public static class Helper
         else
             return false;
     }
+
     public static string ExcludeCameraTags(string input)
     {
         string result = input;
@@ -55,6 +58,37 @@ public static class Helper
         string result = word.First().ToString().ToUpper() + word.Substring(1);
         return result;
     }
+    public static string AddSpacesBetweenElements(this string phrase)
+    {
+        string symbols = ",;:";
+        var result = phrase;
+        foreach (var symbol in symbols)
+        {
+            int correction = 0;
+            Regex rgx = new Regex(symbol.ToString());
+            foreach (Match match in rgx.Matches(result))
+            {
+                int index = match.Index;
+                if (result.ElementAt(index + correction) != ' ')
+                {
+                    result = result.Insert(match.Index + correction, " ");
+                    correction++;
+                }
+                if (result.ElementAt(index + 1 + correction) != ' ')
+                {
+                    result = result.Insert(match.Index + 1 + correction, " ");
+                    correction++;
+                }
+            }
+        }
+        return result;
+    }
+    public static int GetWordIndex(this string input, string word)
+    {
+        int index = Array.IndexOf(input.Split(' '), word);
+        return index;
+    }
+
     public static string LemmatizeOne(string word)
     {
         ILemmatizer lmtz = new LemmatizerPrebuiltFull(LemmaSharp.LanguagePrebuilt.English);

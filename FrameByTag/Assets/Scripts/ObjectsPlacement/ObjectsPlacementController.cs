@@ -29,7 +29,7 @@ public class ObjectsPlacementController : MonoBehaviour
         SpatialApplier = new SpatialApplier();
 
         LastShotElements = new Dictionary<ShotElement, GameObject>();
-        var DescriptionHandler = new ObjectsPlacementHandler(this);
+        var DescriptionHandler = new ObjectsPlacementHandler();
 
         ObjectsPlacementHandler.OnSentenceProcessedEvent += SceneByDescriptionSetup;
 
@@ -39,14 +39,14 @@ public class ObjectsPlacementController : MonoBehaviour
     }
     public void SceneDefaultContentSetup()
     {
-        string defName = "Doll" ;
+        string defName = "Doll";
         if (FocusLayer.Contains(AOController.GetObject(defName))) { return; }
 
         var dummy = new ShotElement(defName, 1, ShotHierarchyRank.InFocus, "Idle");
         SpawnFocusedObject(dummy);
-        LastExecutedTagItemDict = new Dictionary<DescriptionTag, ShotElement>() 
-        { 
-            { new DescriptionTag(0, defName, TagType.Item), dummy } 
+        LastExecutedTagItemDict = new Dictionary<DescriptionTag, ShotElement>()
+        {
+            { new DescriptionTag(0, defName, TagType.Item), dummy }
         };
 
     }
@@ -70,7 +70,7 @@ public class ObjectsPlacementController : MonoBehaviour
         var elements = tagItemDict.Values.Where(x => x != null).ToList();
         if (tagItemDict == LastExecutedTagItemDict)
         {
-            OnContentPreparedEvent?.Invoke();
+            //OnContentPreparedEvent?.Invoke();
             return;
         }
         else
@@ -79,7 +79,7 @@ public class ObjectsPlacementController : MonoBehaviour
         }
 
         int maxLayer = elements.Max(x => x.Layer);
-        for(int i = 0; i <= maxLayer;  i++)
+        for (int i = 0; i <= maxLayer; i++)
         {
 
             var layerElements = elements.Where(x => x.Layer == i).ToList();
@@ -101,7 +101,7 @@ public class ObjectsPlacementController : MonoBehaviour
 
         }
 
-        foreach(var dictElem in tagItemDict.Keys.Where(x=>x.TagType==TagType.Spatial))
+        foreach (var dictElem in tagItemDict.Keys.Where(x => x.TagType == TagType.Spatial))
         {
             MoveBySpatial(dictElem, tagItemDict);
         }
@@ -147,7 +147,7 @@ public class ObjectsPlacementController : MonoBehaviour
         if (FocusLayer == null) { FocusLayer = new List<GameObject>(); }
         var obj = AOController.GetObject(element.PropName);
 
-        if ( FocusLayer.FirstOrDefault( x => x.name == obj.name) == null) //&& ReferenceEquals( obj, FocusLayer.Select( x => x.name == obj.name) )
+        if (FocusLayer.FirstOrDefault(x => x.name == obj.name) == null) //&& ReferenceEquals( obj, FocusLayer.Select( x => x.name == obj.name) )
         {
             var sceneGO = Instantiate(obj);
 
@@ -170,13 +170,13 @@ public class ObjectsPlacementController : MonoBehaviour
         var pointer = LastShotElements[oldelement];
         LastShotElements.Remove(oldelement);
         LastShotElements.Add(newelement, pointer);
-        if(oldelement.State != newelement.State)
+        if (oldelement.State != newelement.State)
             pointer.GetComponent<SceneObject>().SetStateByName(newelement.State);
-        if(oldelement.Rank != newelement.Rank) { }//TODO:
-        if(oldelement.Layer != newelement.Layer) { }//TODO:
+        if (oldelement.Rank != newelement.Rank) { }//TODO:
+        if (oldelement.Layer != newelement.Layer) { }//TODO:
 
     }
-    private void SpawnAddition(ShotElement element,List<DescriptionTag> tags)
+    private void SpawnAddition(ShotElement element, List<DescriptionTag> tags)
     {
         if (AdditiveLayer == null) { AdditiveLayer = new List<GameObject>(); }
 
@@ -187,7 +187,7 @@ public class ObjectsPlacementController : MonoBehaviour
         AdditiveLayer.Add(sceneGO);
         LastShotElements.Add(element, sceneGO);
 
-        
+
     }
     private void BackgroundSpawn(ShotElement element)
     {
@@ -198,12 +198,12 @@ public class ObjectsPlacementController : MonoBehaviour
     {
         this.SpatialApplier.Apply(spatialTag, ref LastShotElements, tagItemDict);
     }
-    
+
     private void ApplyState(ShotElement element, GameObject objectOnScene)
     {
 
     }
-    
+
     public Vector3 GetBaseDetailPosition()
     {
         if (FocusLayer.Count == 0) { Debug.LogError("zero objects in focus"); return Vector3.zero; }
@@ -213,7 +213,7 @@ public class ObjectsPlacementController : MonoBehaviour
         foreach (var FocusObject in FocusLayer)
         {
             result += FocusObject.transform.position;
-            result /= (float) FocusLayer.Count; 
+            result /= (float)FocusLayer.Count;
         }
 
         return result;
@@ -222,7 +222,7 @@ public class ObjectsPlacementController : MonoBehaviour
     public static Bounds GroupBounds(List<GameObject> group)
     {
         Bounds result = new Bounds();
-        foreach(var go in group)
+        foreach (var go in group)
         {
             result.Encapsulate(go.transform.position);
         }
@@ -254,10 +254,20 @@ public class ObjectsPlacementController : MonoBehaviour
             return Vector3.zero;
 
         Vector3 avg = Vector3.zero;
-        foreach(var go in group)
+        foreach (var go in group)
         {
             avg += go.transform.forward;
         }
         return (avg / group.Count).normalized;
     }
+    public static Quaternion RotationToDirection(Vector3 origin, Vector3 destination)
+    {
+        var direction = (destination - origin).normalized;
+        var lookRotation = Quaternion.LookRotation(direction);
+        return lookRotation;
+    }
+
+    //find the vector pointing from our position to the target
+    
+    
 }

@@ -9,7 +9,7 @@ using OpenNLP.Tools.Parser;
 public static class ShotsStatsExtension
 {
     private static string[] UsefulTypes = new string[] { "NNS", "NN", "VB", "VBG", "JJ", "RB" };
-    public static Dictionary<CameraSetter.ShotType, float> FirstSyntaxElement(this Dictionary<CameraSetter.ShotType, float> shots, Parse[] sentenceParts)
+    public static Dictionary<ShotType, float> FirstSyntaxElement(this Dictionary<ShotType, float> shots, Parse[] sentenceParts)
     {
         var usefulParts = sentenceParts.Where(x => UsefulTypes.Contains(x.Type));
         var firstElement = usefulParts.First();
@@ -17,34 +17,34 @@ public static class ShotsStatsExtension
         switch (firstElement.Type)
         {
             case "NNS":
-                shots[CameraSetter.ShotType.LongShot] += 0.1f;
-                shots[CameraSetter.ShotType.ExtremelyLongShot] += 0.1f;
+                shots[ShotType.LongShot] += 0.1f;
+                shots[ShotType.ExtremelyLongShot] += 0.1f;
                 break;
             case "NN":
-                shots[CameraSetter.ShotType.LongShot] += 0.2f;
+                shots[ShotType.LongShot] += 0.2f;
                 break;
             case "VB":
-                shots[CameraSetter.ShotType.MediumShot] += 0.2f;
+                shots[ShotType.MediumShot] += 0.2f;
                 break;
             case "VBG":
-                shots[CameraSetter.ShotType.MediumShot] += 0.2f;
+                shots[ShotType.MediumShot] += 0.2f;
                 break;
             case "JJ":
-                shots[CameraSetter.ShotType.CloseShot] += 0.1f;
-                shots[CameraSetter.ShotType.MediumShot] += 0.1f;
+                shots[ShotType.CloseShot] += 0.1f;
+                shots[ShotType.MediumShot] += 0.1f;
                 break;
             case "RB":
-                shots[CameraSetter.ShotType.CloseShot] += 0.1f;
-                shots[CameraSetter.ShotType.MediumShot] += 0.1f;
+                shots[ShotType.CloseShot] += 0.1f;
+                shots[ShotType.MediumShot] += 0.1f;
                 break;
             default:
-                shots[CameraSetter.ShotType.LongShot] += 0.2f;
+                shots[ShotType.LongShot] += 0.2f;
                 break;
         }
 
         return shots;
     }
-    public static Dictionary<CameraSetter.ShotType, float> SyntaxElementsInfluence(this Dictionary<CameraSetter.ShotType, float> shots, Parse[] sentenceParts)
+    public static Dictionary<ShotType, float> SyntaxElementsInfluence(this Dictionary<ShotType, float> shots, Parse[] sentenceParts)
     {
         var usefulParts = sentenceParts.Where(x => UsefulTypes.Contains(x.Type));
         var groups = usefulParts.GroupBy(x=>x.Type).Select(g => new { Type = g.Key, Count = g.Count() });
@@ -53,45 +53,45 @@ public static class ShotsStatsExtension
         switch (baseElement.Type)
         {
             case "NNS":
-                shots[CameraSetter.ShotType.LongShot] += 0.1f;
-                shots[CameraSetter.ShotType.ExtremelyLongShot] += 0.1f;
+                shots[ShotType.LongShot] += 0.1f;
+                shots[ShotType.ExtremelyLongShot] += 0.1f;
                 break;
             case "NN":
-                shots[CameraSetter.ShotType.LongShot] += 0.2f;
+                shots[ShotType.LongShot] += 0.2f;
                 break;
             case "VB":
-                shots[CameraSetter.ShotType.MediumShot] += 0.2f;
+                shots[ShotType.MediumShot] += 0.2f;
                 break;
             case "VBG":
-                shots[CameraSetter.ShotType.MediumShot] += 0.2f;
+                shots[ShotType.MediumShot] += 0.2f;
                 break;
             case "JJ":
-                shots[CameraSetter.ShotType.CloseShot] += 0.1f;
-                shots[CameraSetter.ShotType.MediumShot] += 0.1f;
+                shots[ShotType.CloseShot] += 0.1f;
+                shots[ShotType.MediumShot] += 0.1f;
                 break;
             case "RB":
-                shots[CameraSetter.ShotType.CloseShot] += 0.1f;
-                shots[CameraSetter.ShotType.MediumShot] += 0.1f;
+                shots[ShotType.CloseShot] += 0.1f;
+                shots[ShotType.MediumShot] += 0.1f;
                 break;
             default:
-                shots[CameraSetter.ShotType.LongShot] += 0.2f;
+                shots[ShotType.LongShot] += 0.2f;
                 break;
         }
 
         return shots;
     }
-    public static Dictionary<CameraSetter.ShotType, float> SpatialElementsInfluence(this Dictionary<CameraSetter.ShotType, float> shots, Parse[] sentenceParts)
+    public static Dictionary<ShotType, float> SpatialElementsInfluence(this Dictionary<ShotType, float> shots, Parse[] sentenceParts)
     {
         string[] spatialTypes = new string[] { "IN" };
         var usefulParts = sentenceParts.Where(x => UsefulTypes.Contains(x.Type)).ToList();
         if (usefulParts.Count != 0)
         {
-            shots[CameraSetter.ShotType.ExtremelyLongShot] = 0.1f;//TODO: custom value by different spatials
-            shots[CameraSetter.ShotType.LongShot] = 0.1f;//TODO: custom value by different spatials
+            shots[ShotType.ExtremelyLongShot] = 0.1f;//TODO: custom value by different spatials
+            shots[ShotType.LongShot] = 0.1f;//TODO: custom value by different spatials
         }
         return shots;
     }
-    public static Dictionary<CameraSetter.ShotType, float> SentenceSubjectsInfluence(this Dictionary<CameraSetter.ShotType, float> shots, Parse[] sentenceParts)
+    public static Dictionary<ShotType, float> SentenceSubjectsInfluence(this Dictionary<ShotType, float> shots, Parse[] sentenceParts)
     {
         var sentenceSubjectsCount = 0;
         
@@ -100,8 +100,8 @@ public static class ShotsStatsExtension
         var usefulParts = sentenceParts.Where(x => UsefulTypes.Contains(x.Type)).ToList();
         if (usefulParts.Count != 0)
         {
-            shots[CameraSetter.ShotType.ExtremelyLongShot] = 0.1f;//TODO: custom value by different spatials
-            shots[CameraSetter.ShotType.LongShot] = 0.1f;//TODO: custom value by different spatials
+            shots[ShotType.ExtremelyLongShot] = 0.1f;//TODO: custom value by different spatials
+            shots[ShotType.LongShot] = 0.1f;//TODO: custom value by different spatials
         }
         return shots;
     }
@@ -111,13 +111,12 @@ public static class ShotsStatsExtension
 public class CameraParametersHandler
 {
 
-    public readonly ShotParameters DefaultParams = new ShotParameters(CameraSetter.ShotType.DefaultShot,
-                                                                      CameraSetter.HorizontalAngle.Front,
-                                                                      CameraSetter.VerticalAngle.EyeLevel,
-                                                                      CameraSetter.HorizontalThird.Center);
-
+    public readonly ShotParameters DefaultParams = new ShotParameters(ShotType.DefaultShot,
+                                                                      HorizontalAngle.Front,
+                                                                      VerticalAngle.EyeLevel,
+                                                                      HorizontalThird.Center);
     
-    private static Dictionary<string[], string> _cameraParametersAltNames = new Dictionary<string[], string>(){
+    private static readonly Dictionary<string[], string> _cameraParametersAltNames = new Dictionary<string[], string>(){
             { new string[] { "first third", "screen left" }, "FirstThird" },
             { new string[] { "center", "centered" }, "Center" },
             { new string[] { "last third", "screen right" }, "LastThird" },
@@ -136,7 +135,8 @@ public class CameraParametersHandler
             { new string[] { "long shot", "ls", "full shot" }, "LongShot" },
             { new string[] { "medium shot", "ms", "mid shot", "mediumshot" }, "MediumShot" },
             { new string[] { "large shot", "open shot", "ws" }, "ExtremelyLongShot" },
-            { new string[] {"closeup","close shot"}, "CloseShot" }
+            { new string[] {"closeup","close shot"}, "CloseShot" },
+            { new string[] {"backshot"}, "Backshot" }
         };
     public static Dictionary<string, string> CameraParametersAltNames
     {
@@ -146,8 +146,8 @@ public class CameraParametersHandler
         }
     }
 
-    private ShotParameters _generatedParameters;
-    private ShotParameters _resultParameters;
+    private ShotParameters GeneratedParameters;
+    private ShotParameters ResultParameters;
     
     private CameraSetter CameraController;
 
@@ -155,10 +155,10 @@ public class CameraParametersHandler
     {
         CameraController = cameraSetter;
     }
-    public ShotParameters ShotOptionsHandle(string input)
+    public ShotParameters ShotParametersHandle(string input)
     {
         if(string.IsNullOrEmpty(input)) { return DefaultParams; }
-        _generatedParameters = FrameDescription.ParsedParts != null ? GenerateShotByText() : DefaultParams;
+        GeneratedParameters = FrameDescription.ParsedParts != null ? GenerateShotByText() : DefaultParams;
 
         var ShotOptionNames = Helper.DictSortByLength(CameraParametersAltNames);
         var processedInput = input.ToLower();
@@ -169,22 +169,26 @@ public class CameraParametersHandler
                 processedInput = processedInput.Replace(Option.Key, Option.Value);
             }
         }
-        
-        _resultParameters = new ShotParameters( HandleShotType(processedInput),
+
+        bool isFromBehind = false;
+        if (processedInput.Contains("Backshot"))
+            isFromBehind = true;
+        ResultParameters = new ShotParameters( HandleShotType(processedInput),
                                                 HandleHorizontalAngle(processedInput),
                                                 HandleVerticalAngle(processedInput),
-                                                HandleThird(processedInput) );//those are return generated if null 
+                                                HandleThird(processedInput),
+                                                isFromBehind);//those are return generated if null 
 
-        return _resultParameters;
+        return ResultParameters;
     }
     private ShotParameters GenerateShotByText()
     {
         var parts = FrameDescription.ParsedParts;
 
-        Dictionary<CameraSetter.ShotType, float> shotPriority = new Dictionary<CameraSetter.ShotType, float> { { CameraSetter.ShotType.CloseShot, 0.0f },
-                                                                                                                  { CameraSetter.ShotType.MediumShot, 0.0f },
-                                                                                                                  { CameraSetter.ShotType.LongShot, 0.0f },
-                                                                                                                  { CameraSetter.ShotType.ExtremelyLongShot, 0.0f } };
+        Dictionary<ShotType, float> shotPriority = new Dictionary<ShotType, float> { { ShotType.CloseShot, 0.0f },
+                                                                                     { ShotType.MediumShot, 0.0f },
+                                                                                     { ShotType.LongShot, 0.0f },
+                                                                                     { ShotType.ExtremelyLongShot, 0.0f } };
         shotPriority = shotPriority.FirstSyntaxElement(parts);
         shotPriority = shotPriority.SyntaxElementsInfluence(parts);
         shotPriority = shotPriority.SpatialElementsInfluence(parts);
@@ -193,7 +197,7 @@ public class CameraParametersHandler
         #region debug
         foreach (var part in parts)
         {
-            Debug.Log(string.Format("{0} <<{1}>> {2}", part.Type, part.Value, part.Parent));
+            //Debug.Log(string.Format("{0} <<{1}>> {2}", part.Type, part.Value, part.Parent));
         }
         #endregion debug
 
@@ -205,43 +209,42 @@ public class CameraParametersHandler
         return resultShot;
     }
 
-    
-    private CameraSetter.ShotType HandleShotType(string processedInput)
+    private ShotType HandleShotType(string processedInput)
     {
-        var values = Enum.GetValues(typeof(CameraSetter.ShotType)).Cast<CameraSetter.ShotType>().OrderByDescending(x=>x.ToString().Length);
+        var values = Enum.GetValues(typeof(ShotType)).Cast<ShotType>().OrderByDescending(x=>x.ToString().Length);
         foreach (var shotType in values)
         {
             if (processedInput.Contains(shotType.ToString()))
                 return shotType;
         }
-        return _generatedParameters.ShotType;
+        return GeneratedParameters.ShotType;
     }
-    private CameraSetter.HorizontalAngle HandleHorizontalAngle(string processedInput)
+    private HorizontalAngle HandleHorizontalAngle(string processedInput)
     {
-        foreach (var horizontalAngle in Enum.GetValues(typeof(CameraSetter.HorizontalAngle)).Cast<CameraSetter.HorizontalAngle>())
+        foreach (var horizontalAngle in Enum.GetValues(typeof(HorizontalAngle)).Cast<HorizontalAngle>())
         {
             if (processedInput.Contains(horizontalAngle.ToString()))
                 return horizontalAngle;
         }
-        return _generatedParameters.HAngle;
+        return GeneratedParameters.HAngle;
     }
-    private CameraSetter.VerticalAngle HandleVerticalAngle(string processedInput)
+    private VerticalAngle HandleVerticalAngle(string processedInput)
     {
-        foreach (var verticalAngle in Enum.GetValues(typeof(CameraSetter.VerticalAngle)).Cast<CameraSetter.VerticalAngle>())
+        foreach (var verticalAngle in Enum.GetValues(typeof(VerticalAngle)).Cast<VerticalAngle>())
         {
             if (processedInput.Contains(verticalAngle.ToString()))
                 return verticalAngle;
         }
-        return _generatedParameters.VAngle;
+        return GeneratedParameters.VAngle;
     }
-    private CameraSetter.HorizontalThird HandleThird(string processedInput)
+    private HorizontalThird HandleThird(string processedInput)
     {
-        foreach (var thirdType in Enum.GetValues(typeof(CameraSetter.HorizontalThird)).Cast<CameraSetter.HorizontalThird>())
+        foreach (var thirdType in Enum.GetValues(typeof(HorizontalThird)).Cast<HorizontalThird>())
         {
             if (processedInput.Contains(thirdType.ToString()))
                 return thirdType;
         }
-        return _generatedParameters.Third;
+        return GeneratedParameters.Third;
     }
     
     

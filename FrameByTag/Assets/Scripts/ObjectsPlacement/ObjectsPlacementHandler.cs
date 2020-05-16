@@ -13,19 +13,15 @@ using System;
 
 public class ObjectsPlacementHandler
 {
-    private readonly ObjectsPlacementController OPController;
-
     public static string LastTaggedInput;
     private string LastRawInput;
 
     public delegate void OnSentenceProcessed(Dictionary<DescriptionTag, ShotElement> itemTags);
     public static event OnSentenceProcessed OnSentenceProcessedEvent;
-    public ObjectsPlacementHandler(ObjectsPlacementController opcontroller)
+    public ObjectsPlacementHandler()
     {
         FrameDescription.OnDescriptionChangedEvent += ShotElementsBreakdown;
-        OPController = opcontroller;
     }
-
     
     private void ShotElementsBreakdown(string rawinput)
     {
@@ -42,21 +38,26 @@ public class ObjectsPlacementHandler
         }
 
         var input = Regex.Replace(LastRawInput, @"[!?.]+", "");
-        input = AddSpaces(input).ToLower();
+        input = input.AddSpacesBetweenElements();//AddSpaces(input).ToLower();
 
         //TODO: add dictionary <descriptiontags,elements>
         var tagItemSeq = new Dictionary<DescriptionTag, ShotElement>();
         
         var processedInput = HandleItems(input, ref tagItemSeq);
-        processedInput = HHandleSpatials(processedInput, ref tagItemSeq);//TODO: checkout
+        processedInput = HandleSpatials(processedInput, ref tagItemSeq);//TODO: checkout
         processedInput = HandleStates(processedInput, ref tagItemSeq);
-        HandleRelations(processedInput, ref tagItemSeq);
+        //HandleRelations(processedInput, ref tagItemSeq);
+        foreach (var tag in tagItemSeq.Values)
+        {
+            if (tag != null)
+                Debug.Log(tag.ToString());
+        }
+
 
         LastTaggedInput = processedInput;
         //Debug.Log(processedInput);
         OnSentenceProcessedEvent?.Invoke(tagItemSeq);
     }
-
     private string HandleItems(string rawinput, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
         string processedInput = rawinput;
@@ -69,7 +70,7 @@ public class ObjectsPlacementHandler
                 processedInput = processedInput.Replace(altName.Key, altName.Value);
                 int index = Array.IndexOf(processedInput.Split(' '), altName.Value);
                 var tag = new DescriptionTag(index, altName.Value, TagType.Item);
-                Debug.Log(processedInput);
+
                 itemTags.Add(tag, new ShotElement(altName.Value, rank: ShotHierarchyRank.InFocus));
             }
         }
@@ -77,32 +78,6 @@ public class ObjectsPlacementHandler
         return processedInput;
     }
     private string HandleSpatials(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
-    {
-        var sceneSequence = itemTags.Keys.ToList();
-        string processedInput = input;
-        var sortedSpatials = Helper.DictSortByLength(SpatialApplier.GetAlternateNames());
-
-        foreach(var spatial in sortedSpatials)
-        {
-            if (Helper.ContainsTag(processedInput, spatial.Key))//processedInput.Contains(spatial.Key))
-            {
-                processedInput = processedInput.Replace(spatial.Key, spatial.Value);
-                int index = Array.IndexOf(processedInput.Split(' '), spatial.Value);
-                var tag = new DescriptionTag(index, spatial.Value, TagType.Spatial);
-
-                List<string> spatials = new List<string>() { "By" };
-                var updatedItem = itemTags.Where(x => x.Value != null).Where(x => x.Key.Index > index).First();
-                updatedItem.Value.Rank = spatials.Contains(spatial.Value) ? ShotHierarchyRank.Addition : updatedItem.Value.Rank;
-                itemTags[updatedItem.Key] = updatedItem.Value;
-
-                //sceneSequence.Add(tag);
-                itemTags.Add(tag, null);
-            }
-        }
-
-        return processedInput;
-    }
-    private string HHandleSpatials(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
         var sceneSequence = itemTags.Keys.ToList();
         string markedSpatials = input;
@@ -133,14 +108,12 @@ public class ObjectsPlacementHandler
 
         return markedSpatials;
     }
-    
-
     private string HandleStates(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
         string result = input;
         var parts = FrameDescription.ParsedParts;
         int lastActionIndex = 0;
-        int layer = 1;
+        int layer = 0;
 
         for (int i = 0; i < parts.Length; i++)
         {
@@ -156,7 +129,7 @@ public class ObjectsPlacementHandler
 
                 var stateWord = word.MakeCapitalLetter();//word.First().ToString().ToUpper() + word.Substring(1);
                 result = input.Replace(word, stateWord);//TODO: insert Name instead of name
-                int verbIndex = GetWordIndex(result, stateWord);//TODO: retruns -1
+                int verbIndex = result.GetWordIndex(stateWord);//GetWordIndex(result, stateWord);
                 var prevItems = itemTags.Where(x=>x.Key.TagType == TagType.Item)
                                                .Where(x => x.Key.Index < verbIndex && x.Key.Index >= lastActionIndex);
                 foreach(var prevItem in prevItems)
@@ -191,8 +164,19 @@ public class ObjectsPlacementHandler
         
         //TODO: rework this thing, something isnt right
     }
-    
-    
+
+    private Parse ParseSentence(string sentence)
+    {
+        var _parser = new EnglishTreebankParser(Directory.GetCurrentDirectory() + @"\Models\", true, false);
+
+        return _parser.DoParse(sentence);
+    }
+    private string[] SplitSentences(string paragraph)
+    {
+        var _sentenceDetector = new EnglishMaximumEntropySentenceDetector(Directory.GetCurrentDirectory() + @"\Models\" + "EnglishSD.nbin");
+
+        return _sentenceDetector.SentenceDetect(paragraph);
+    }
     private void GatherItemInfo(string processedinput)
     {
         var parts = processedinput.Split(' ');
@@ -204,7 +188,6 @@ public class ObjectsPlacementHandler
             }
         }
     }
-    
     static void PartsDetection(string expression, int index)
     {
 
@@ -220,7 +203,7 @@ public class ObjectsPlacementHandler
             if (expression[i] == '(')
             {
                 st.Push((int)expression[i]);
-            } 
+            }
             else if (expression[i] == ')')
             {
                 st.Pop();
@@ -230,16 +213,7 @@ public class ObjectsPlacementHandler
                 }
             }
         }
-        
-    }
-    
 
-    private string TreeParsingFull(string input)
-    {
-        var modelPath = Directory.GetCurrentDirectory() + @"\Models\";
-        var parser = new EnglishTreebankParser(modelPath);
-        var treeParsing = parser.DoParse(input);
-        return treeParsing.Show();
     }
     private string IdentifyCoreferents(IEnumerable<string> sentences)
     {
@@ -254,56 +228,9 @@ public class ObjectsPlacementHandler
         return coreferenceFinder.GetCoreferenceParse(parsedSentences.ToArray());
     }
 
-    private Parse ParseSentence(string sentence)
-    {
-        var _parser = new EnglishTreebankParser(Directory.GetCurrentDirectory() + @"\Models\", true, false);
-
-        return _parser.DoParse(sentence);
-    }
-
-    private string[] SplitSentences(string paragraph)
-    {
-        var _sentenceDetector = new EnglishMaximumEntropySentenceDetector(Directory.GetCurrentDirectory() + @"\Models\" + "EnglishSD.nbin");
-
-        return _sentenceDetector.SentenceDetect(paragraph);
-    }
-
-    private string AddSpaces(string input)
-    {
-        string symbols = ",;:";
-        var result = input;
-        foreach(var symbol in symbols)
-        {
-            int correction = 0;
-            Regex rgx = new Regex(symbol.ToString());
-            foreach(Match match in rgx.Matches(result))
-            {
-                int index = match.Index;
-                if (result.ElementAt(index + correction) != ' ')
-                {
-                    result = result.Insert(match.Index + correction, " ");
-                    correction++;
-                }
-                if (result.ElementAt(index + 1 + correction) != ' ')
-                {
-                    result = result.Insert(match.Index + 1 + correction, " ");
-                    correction++;
-                }
-            }
-        }
-        return result;
-    }
-    private int GetWordIndex(string input, string substring)
-    {
-        int index = Array.IndexOf(input.Split(' '), substring);
-        return index;
-    }
-    
 
 
 
 
-
-    
 
 }
