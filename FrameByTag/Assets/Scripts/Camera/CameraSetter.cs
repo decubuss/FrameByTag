@@ -230,34 +230,22 @@ public class CameraSetter : MonoBehaviour
 
         var FObjects = OPController.FocusLayer;
         var SpringArmLength = 0f;
-        if (FObjects.Count > 1)
+
+        float maxHeight = 0;
+        foreach (GameObject inFocus in FObjects)
         {
-            float maxHeight = 0;
-            foreach (GameObject FocusedObject in FObjects)
-            {
-                if (maxHeight < FocusedObject.GetComponent<SceneObject>().Height)
-                    maxHeight = FocusedObject.GetComponent<SceneObject>().Height;
-            }
-            float Width = Vector3.Distance(FObjects[0].transform.position, FObjects[FObjects.Count - 1].transform.position);
-
-            if(maxHeight > Width)
-            {
-                {
-                    SpringArmLength = (float)((Vector3.Distance(TopPoint, BottomPoint) / 2) / GivenCoefficient);
-                }
-            }
-            else
-            {
-                var ObjectsWidth = FObjects[0].GetComponent<SceneObject>().Bounds.extents.y 
-                                   + FObjects[FObjects.Count - 1].GetComponent<SceneObject>().Bounds.extents.y;
-                SpringArmLength = (float)((Vector3.Distance(FObjects[0].transform.position, FObjects[FObjects.Count - 1].transform.position) + ObjectsWidth / 2) / Mathf.Tan(45));
-            }
-
+            if (maxHeight < inFocus.GetComponent<SceneObject>().Height)
+                maxHeight = inFocus.GetComponent<SceneObject>().Height;
+        }
+        float Width = Vector3.Distance(FObjects.First().transform.position, FObjects.Last().transform.position) + 
+                      (FObjects.First().GetComponent<SceneObject>().Width + FObjects.First().GetComponent<SceneObject>().Width)/2;
+        if (maxHeight > Width)
+        {
+            SpringArmLength = (float)((Vector3.Distance(TopPoint, BottomPoint) / 2) / GivenCoefficient);
         }
         else
         {
-            var VerticalAngle = CurrentCamera.fieldOfView;//get vertical field of view
-            SpringArmLength = (float)((Vector3.Distance(TopPoint, BottomPoint) / 2) / GivenCoefficient);//Mathf.Tan(VerticalAngle / 2);
+            SpringArmLength = (float)(Width / Mathf.Tan(45));
         }
 
         return SpringArmLength;
@@ -320,12 +308,15 @@ public class CameraSetter : MonoBehaviour
     }
     public void ExecuteParameters(ShotParameters shotParameters)
     {
-        BaseDetail.UpdatePosition();
-
+        BaseDetail.CameraUnbind();
+        BaseDetail.UpdatePosition(CalculateCenterOfFrame());
+        
         if (shotParameters.ShotType == ShotType.DefaultShot)
             DefaultShot();
         else
             this.SendMessage(shotParameters.ShotType.ToString());
+        BaseDetail.UpdateRotation();
+        BaseDetail.CameraBind();
 
         isFromBehind = shotParameters.isfromBehind;
         _shot = shotParameters.ShotType;
