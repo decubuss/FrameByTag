@@ -132,6 +132,20 @@ public class SceneObject : MonoBehaviour, INameAlternatable
         var result = Animator.GetBoneTransform(HumanBodyBones.Head);
         return result;
     }
+
+    public void SetMaterial(Material mat)
+    {
+        if (gameObject.GetComponentInChildren<MeshRenderer>() != null)
+            gameObject.GetComponentInChildren<MeshRenderer>().material = mat;
+        else if (gameObject.GetComponentInChildren<SkinnedMeshRenderer>() != null)
+            gameObject.GetComponentInChildren<SkinnedMeshRenderer>().material = mat;
+        else
+        {
+            Debug.LogError("no bounds on " + gameObject.name);
+        }
+    }
+
+
     public void SetStateByName(string name)
     {
         string stateName = ""; //TODO: LemmatizeName 
@@ -142,7 +156,6 @@ public class SceneObject : MonoBehaviour, INameAlternatable
         else
             Debug.LogError( string.Format("no animator on {0}", Name) );
     }
-
     private void SetState(string stateName)
     {
         if (Animator == null) { return; }

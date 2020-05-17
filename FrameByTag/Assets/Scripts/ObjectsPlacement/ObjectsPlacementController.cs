@@ -40,7 +40,7 @@ public class ObjectsPlacementController : MonoBehaviour
     public void SceneDefaultContentSetup()
     {
         string defName = "Doll";
-        if (FocusLayer.Contains(AOController.GetObject(defName))) { return; }
+        if (FocusLayer.Contains(AvailableObjectsController.GetObject(defName))) { return; }
 
         var dummy = new ShotElement(defName, 1, ShotHierarchyRank.InFocus, "Idle");
         SpawnFocusedObject(dummy);
@@ -68,7 +68,7 @@ public class ObjectsPlacementController : MonoBehaviour
     {
         var tags = tagItemDict.Keys.ToList();
         var elements = tagItemDict.Values.Where(x => x != null).ToList();
-        if (tagItemDict == LastExecutedTagItemDict)
+        if (tagItemDict == LastExecutedTagItemDict || elements.Count == 0)
         {
             //OnContentPreparedEvent?.Invoke();
             return;
@@ -145,12 +145,12 @@ public class ObjectsPlacementController : MonoBehaviour
     private void SpawnFocusedObject(ShotElement element)
     {
         if (FocusLayer == null) { FocusLayer = new List<GameObject>(); }
-        var obj = AOController.GetObject(element.PropName);
+        var obj = AvailableObjectsController.GetObject(element.PropName);
 
         if (FocusLayer.FirstOrDefault(x => x.name == obj.name) == null) //&& ReferenceEquals( obj, FocusLayer.Select( x => x.name == obj.name) )
         {
             var sceneGO = Instantiate(obj);
-
+            sceneGO.SetActive(true);
             if (sceneGO.GetComponent<SceneObject>().CurrentState != element.State)
                 sceneGO.GetComponent<SceneObject>().SetStateByName(element.State);
 
@@ -180,7 +180,7 @@ public class ObjectsPlacementController : MonoBehaviour
     {
         if (AdditiveLayer == null) { AdditiveLayer = new List<GameObject>(); }
 
-        var obj = AOController.GetObject(element.PropName);
+        var obj = AvailableObjectsController.GetObject(element.PropName);
         var sceneGO = Instantiate(obj);
         if (element.State != null)
             sceneGO.GetComponent<SceneObject>().SetStateByName(element.State);
@@ -202,21 +202,6 @@ public class ObjectsPlacementController : MonoBehaviour
     private void ApplyState(ShotElement element, GameObject objectOnScene)
     {
 
-    }
-
-    public Vector3 GetBaseDetailPosition()
-    {
-        if (FocusLayer.Count == 0) { Debug.LogError("zero objects in focus"); return Vector3.zero; }
-        //get action focus point
-
-        Vector3 result = Vector3.zero;
-        foreach (var FocusObject in FocusLayer)
-        {
-            result += FocusObject.transform.position;
-            result /= (float)FocusLayer.Count;
-        }
-
-        return result;
     }
 
     public static Bounds GroupBounds(List<GameObject> group)

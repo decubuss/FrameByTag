@@ -11,6 +11,30 @@ public class AvailableObjectsController
 {
     public static List<GameObject> AvailableObjects = new List<GameObject>();
     private static Dictionary<string, string> AvailableNamesDict;
+
+
+    public static void AddCharacter(string name, string[] altnames, Color matColor)
+    {
+        Material newMat = new Material(Shader.Find("Specular"));
+        newMat.color = matColor;
+
+        var dummy = (GameObject)Resources.Load("Prefabs/Doll");
+        GameObject newSceneObject = Object.Instantiate(dummy, new Vector3(0,-1000f,0), Quaternion.identity);
+        var sceneOBject = newSceneObject.AddComponent<SceneObject>();
+        sceneOBject.Name = name;
+        newSceneObject.name = name;
+        sceneOBject.AltNames = altnames;
+        sceneOBject.SetMaterial( newMat);
+        foreach(var alt in altnames)
+        {
+            AvailableNamesDict.Add(alt, name);
+        }
+
+        AvailableObjects.Add(newSceneObject);
+        newSceneObject.SetActive(false);
+    }
+    
+
     public AvailableObjectsController()
     {
         AvailableObjects = AvailableObjectsHarvest();
@@ -51,7 +75,7 @@ public class AvailableObjectsController
 
         return availableObjects;
     }
-    public GameObject GetObject(string name)
+    public static GameObject GetObject(string name)
     {
         if (AvailableObjects.Count == 0) { Debug.LogError("No objects available smh"); return new GameObject(); }
 
@@ -65,7 +89,7 @@ public class AvailableObjectsController
     }
     public SceneObject GetSceneObject(string name)
     {
-        return this.GetObject(name).GetComponent<SceneObject>();
+        return GetObject(name).GetComponent<SceneObject>();
     }
 
     public void Add(GameObject SceneObject)

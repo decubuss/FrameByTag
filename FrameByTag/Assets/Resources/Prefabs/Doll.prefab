@@ -1500,6 +1500,7 @@ GameObject:
   - component: {fileID: 9094997681230765217}
   - component: {fileID: 9094997681223512889}
   - component: {fileID: 7595230760477572079}
+  - component: {fileID: -607219796036030128}
   m_Layer: 0
   m_Name: Doll
   m_TagString: Untagged
@@ -1556,9 +1557,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CurrentState: 
   AltNames:
-  - buddy
   - dummy
   - doll
+  Name: Doll
+  _bounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+--- !u!114 &-607219796036030128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9094997681230922049}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aefd9dc821a38d64aad740b490c1759a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  CurrentState: 
+  AltNames:
+  - doll
+  - dummy
   Name: Doll
   _bounds:
     m_Center: {x: 0, y: 0, z: 0}
@@ -1611,7 +1631,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 0356067b6de9eb344ab3a4cff048c950, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
