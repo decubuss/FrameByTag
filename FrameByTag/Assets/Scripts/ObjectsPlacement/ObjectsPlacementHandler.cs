@@ -25,7 +25,7 @@ public class ObjectsPlacementHandler
     
     private void ShotElementsBreakdown(string rawinput)
     {
-        if(Helper.ExcludeCameraTags(rawinput) == LastRawInput)
+        if(Helper.ExcludeCameraTags(rawinput).Equals(LastRawInput))
         {
             OnSentenceProcessedEvent?.Invoke(null);
             return;
@@ -46,13 +46,14 @@ public class ObjectsPlacementHandler
         var processedInput = HandleItems(input, ref tagItemSeq);
         processedInput = HandleSpatials(processedInput, ref tagItemSeq);//TODO: checkout
         processedInput = HandleStates(processedInput, ref tagItemSeq);
-        //HandleRelations(processedInput, ref tagItemSeq);
-        foreach (var tag in tagItemSeq.Values)
-        {
-            if (tag != null)
-                Debug.Log(tag.ToString());
-        }
+        HandleRelations(processedInput, ref tagItemSeq);
 
+        foreach (var tag in tagItemSeq.Keys)
+        {
+            string woof = tagItemSeq[tag] != null ? tagItemSeq[tag].ToString() : "";
+            if (tag != null)
+                Debug.Log(tag.ToString() + " <<>> " + woof);
+        }
 
         LastTaggedInput = processedInput;
         //Debug.Log(processedInput);
@@ -130,8 +131,8 @@ public class ObjectsPlacementHandler
                 var stateWord = word.MakeCapitalLetter();//word.First().ToString().ToUpper() + word.Substring(1);
                 result = input.Replace(word, stateWord);//TODO: insert Name instead of name
                 int verbIndex = result.GetWordIndex(stateWord);//GetWordIndex(result, stateWord);
-                var prevItems = itemTags.Where(x=>x.Key.TagType == TagType.Item)
-                                               .Where(x => x.Key.Index < verbIndex && x.Key.Index >= lastActionIndex);
+                var prevItems = itemTags.Where(x => x.Key.TagType == TagType.Item)
+                                        .Where(x => x.Key.Index < verbIndex && x.Key.Index >= lastActionIndex);
                 foreach(var prevItem in prevItems)
                 {
                     itemTags.FirstOrDefault(x => x.Value.PropName == prevItem.Key.Keyword).Value.State = stateWord;
@@ -139,7 +140,8 @@ public class ObjectsPlacementHandler
                     itemTags.FirstOrDefault(x => x.Value.PropName == prevItem.Key.Keyword).Value.Rank = ShotHierarchyRank.InFocus;
                     //TODO: just store and assign
                 }
-                
+
+                itemTags.Add(new DescriptionTag(i, stateWord, TagType.Action), null);
                 lastActionIndex = i;
                 layer++;
             }
@@ -150,21 +152,34 @@ public class ObjectsPlacementHandler
     }
     private void HandleRelations(string input, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
-        if (itemTags.Values.Count >= 1) 
-        { 
-            itemTags.Values.First().Rank = ShotHierarchyRank.InFocus;
-            itemTags.Values.First().Layer = 1; 
+        Dictionary<DescriptionTag, ShotElement> dupSequence = new Dictionary<DescriptionTag, ShotElement>();
+        dupSequence = itemTags;
+        foreach(var spatialTag in dupSequence.Keys.Where(x=>x.TagType==TagType.Spatial).ToList())
+        {
+            var spatialPair = SpatialApplier.GetSpatial(spatialTag.Keyword)
+                                            .FindSpatialSubject(itemTags, spatialTag.Index);
+
+            spatialPair.Value.State = dupSequence.Where(x => x.Key.TagType == TagType.Action && x.Key.Index < spatialPair.Key.Index)
+                                              .OrderByDescending(x => x.Key.Index)
+                                              .Last().Key.Keyword;
+            itemTags[spatialPair.Key] = spatialPair.Value;
+
+            int subjLayer = spatialPair.Value.Layer;
+            //TODO: next items are after the spatial/spatialSubject 
+            var borderIndex = spatialTag.Index > spatialPair.Key.Index ? spatialTag.Index : spatialPair.Key.Index;
+            var nextTaggedItems = dupSequence.Where(x => x.Value != null && x.Key.Index > borderIndex)
+                                          .ToDictionary(g => g.Key, g => g.Value)
+                                          .Keys.ToList();
+            foreach(var tag in nextTaggedItems)
+            {
+                itemTags[tag].Layer = subjLayer + 1;
+            }
         }
 
-        foreach(var element in itemTags.Values.Where(x=> x != null))
-        {
-            element.Rank = element.Rank == ShotHierarchyRank.Default ? ShotHierarchyRank.Addition : element.Rank;
-            element.Layer = 1;
-        }
         
         //TODO: rework this thing, something isnt right
     }
-
+    
     private Parse ParseSentence(string sentence)
     {
         var _parser = new EnglishTreebankParser(Directory.GetCurrentDirectory() + @"\Models\", true, false);

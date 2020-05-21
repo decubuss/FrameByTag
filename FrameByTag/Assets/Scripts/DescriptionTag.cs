@@ -16,6 +16,10 @@ public class DescriptionTag
         Keyword = keyword;
         TagType = type;
     }
-
-
+    public override string ToString()
+    {
+        return string.Format("{0} {1} {2}", this.Index, this.Keyword, this.TagType);
+    }
 }
+
+

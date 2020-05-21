@@ -51,9 +51,15 @@ public class FrameDescription : MonoBehaviour
     }
     private Parse[] TreeParsing(string input)
     {
+        DateTime before = DateTime.Now;
+
         var modelPath = Directory.GetCurrentDirectory() + @"\Models\";
         var parser = new EnglishTreebankParser(modelPath);
         var treeParsing = parser.DoParse(Helper.ExcludeCameraTags(input));
+
+        DateTime after = DateTime.Now;
+        TimeSpan duration = after.Subtract(before);
+        Debug.Log("Duration in milliseconds: " + duration.Milliseconds);
 
         return treeParsing.GetTagNodes();//.Show;
     }

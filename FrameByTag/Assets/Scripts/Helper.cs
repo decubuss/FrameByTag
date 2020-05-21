@@ -88,6 +88,11 @@ public static class Helper
         int index = Array.IndexOf(input.Split(' '), word);
         return index;
     }
+
+    public static bool myApproximation(float a, float b, float tolerance)
+    {
+        return (Mathf.Abs(a - b) < tolerance);
+    }
     public static Transform FindDeepChild(this Transform aParent, string aName)
     {
         Queue<Transform> queue = new Queue<Transform>();

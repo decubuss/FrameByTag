@@ -39,11 +39,11 @@ public class SpatialApplier
         if (Spatials.Count == 0) { Debug.LogError("there is no spatials smh"); return null; }
         return Spatials.Find(x => x.Name == spatialName);
     }
-    public void Apply(DescriptionTag spatialTag, ref Dictionary<ShotElement, GameObject> spawnedElements, Dictionary<DescriptionTag, ShotElement> tagItemDict)
+    public List<GameObject> Apply(DescriptionTag spatialTag, ref Dictionary<ShotElement, GameObject> spawnedElements, Dictionary<DescriptionTag, ShotElement> tagItemDict)
     {
         var spatial = GetSpatial(spatialTag.Keyword);
         var spatialSubjGroup = spatial.FindSpatialSubject(tagItemDict, spatialTag.Index);
-        var spatialObjGroup = spatial.FindSpatialObject(tagItemDict, spatialTag.Index, spatialSubjGroup.Key.Index).ToDictionary(g => g.Key, g => g.Value);//.ToDictionary<DescriptionTag>();
+        var spatialObjGroup = spatial.FindSpatialObject(tagItemDict, spatialTag.Index, spatialSubjGroup.Key.Index).ToDictionary(g => g.Key, g => g.Value);
 
         List<GameObject> goObjGroup = new List<GameObject>();
         foreach(var obj in spatialObjGroup)
@@ -81,9 +81,12 @@ public class SpatialApplier
                 Debug.LogError("yo pierre da shit is fucked - something is tryna to look like a spatial but it is not");
                 break;
         }
-    }
-    
 
+        var result = new List<GameObject>();
+        result.AddRange(goObjGroup);
+        result.Add(goSubjGroup);
+        return result;
+    }
 
     public void ObjectBySubject(List<GameObject> objectPointer, GameObject subjectPointer)
     {

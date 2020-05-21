@@ -8,7 +8,7 @@ using OpenNLP.Tools.Parser;
 
 public static class ShotsStatsExtension
 {
-    private static string[] UsefulTypes = new string[] { "NNS", "NN", "VB", "VBG", "JJ", "RB" };
+    private static string[] UsefulTypes = new string[] { "NNS","NNP", "NN", "VB", "VBG", "JJ", "RB" };
     public static Dictionary<ShotType, float> FirstSyntaxElement(this Dictionary<ShotType, float> shots, Parse[] sentenceParts)
     {
         var usefulParts = sentenceParts.Where(x => UsefulTypes.Contains(x.Type));
@@ -16,24 +16,17 @@ public static class ShotsStatsExtension
 
         switch (firstElement.Type)
         {
-            case "NNS":
+            case "NNS": 
                 shots[ShotType.LongShot] += 0.1f;
                 shots[ShotType.ExtremelyLongShot] += 0.1f;
                 break;
-            case "NN":
+            case "NN":  case "NNP":
                 shots[ShotType.LongShot] += 0.2f;
                 break;
-            case "VB":
+            case "VB": case "VBG":
                 shots[ShotType.MediumShot] += 0.2f;
                 break;
-            case "VBG":
-                shots[ShotType.MediumShot] += 0.2f;
-                break;
-            case "JJ":
-                shots[ShotType.CloseShot] += 0.1f;
-                shots[ShotType.MediumShot] += 0.1f;
-                break;
-            case "RB":
+            case "RB": case "JJ":
                 shots[ShotType.CloseShot] += 0.1f;
                 shots[ShotType.MediumShot] += 0.1f;
                 break;

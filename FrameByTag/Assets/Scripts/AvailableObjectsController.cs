@@ -13,31 +13,35 @@ public class AvailableObjectsController
     private static Dictionary<string, string> AvailableNamesDict;
 
 
+    
+    
+
+    public AvailableObjectsController()
+    {
+        AvailableObjects = AvailableObjectsHarvest();
+    }
+
     public static void AddCharacter(string name, string[] altnames, Color matColor)
     {
         Material newMat = new Material(Shader.Find("Specular"));
         newMat.color = matColor;
 
         var dummy = (GameObject)Resources.Load("Prefabs/Doll");
-        GameObject newSceneObject = Object.Instantiate(dummy, new Vector3(0,-1000f,0), Quaternion.identity);
-        var sceneOBject = newSceneObject.AddComponent<SceneObject>();
+        GameObject newSceneObject = Object.Instantiate(dummy, new Vector3(0, -1000f, 0), Quaternion.identity);
+        var sceneOBject = newSceneObject.GetComponent<SceneObject>();
         sceneOBject.Name = name;
         newSceneObject.name = name;
         sceneOBject.AltNames = altnames;
-        sceneOBject.SetMaterial( newMat);
-        foreach(var alt in altnames)
+        sceneOBject.SetMaterial(newMat);
+
+        if (AvailableNamesDict == null) { GetAlternateNames(); }
+        foreach (var alt in altnames)
         {
             AvailableNamesDict.Add(alt, name);
         }
 
         AvailableObjects.Add(newSceneObject);
         newSceneObject.SetActive(false);
-    }
-    
-
-    public AvailableObjectsController()
-    {
-        AvailableObjects = AvailableObjectsHarvest();
     }
     public static Dictionary<string,string> GetAlternateNames()
     {
@@ -58,7 +62,7 @@ public class AvailableObjectsController
 
         return AvailableNamesDict;
     }
-    private List<GameObject> AvailableObjectsHarvest()
+    private static List<GameObject> AvailableObjectsHarvest()
     {
 
         //TODO: serialize already downloaded and check if anything unserialized is here

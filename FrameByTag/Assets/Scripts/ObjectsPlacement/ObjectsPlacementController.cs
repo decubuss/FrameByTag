@@ -11,6 +11,7 @@ public class ObjectsPlacementController : MonoBehaviour
     private SpatialApplier SpatialApplier;
 
     [SerializeField]
+    public List<GameObject> FocusGroups;
     public List<GameObject> FocusLayer;
     public List<GameObject> AdditiveLayer;
     public List<GameObject> BackgroundLayer;
@@ -81,7 +82,6 @@ public class ObjectsPlacementController : MonoBehaviour
         int maxLayer = elements.Max(x => x.Layer);
         for (int i = 0; i <= maxLayer; i++)
         {
-
             var layerElements = elements.Where(x => x.Layer == i).ToList();
             layerElements = layerElements.OrderBy(x => (int)x.Rank).ToList();
             foreach (var element in layerElements)
@@ -115,24 +115,19 @@ public class ObjectsPlacementController : MonoBehaviour
     {
         if (FocusLayer.Count != 0)
         {
-            foreach (var FObject in FocusLayer)
-            {
-                Destroy(FObject);
-            }
+            FocusLayer.ForEach(x => Destroy(x));
         }
         if (AdditiveLayer.Count != 0)
         {
-            foreach (var addition in AdditiveLayer)
-            {
-                Destroy(addition);
-            }
+            AdditiveLayer.ForEach(x => Destroy(x));
         }
         if (BackgroundLayer.Count != 0)
         {
-            foreach (var back in BackgroundLayer)
-            {
-                Destroy(back);
-            }
+            BackgroundLayer.ForEach(x => Destroy(x));
+        }
+        if (FocusGroups.Count != 0)
+        {
+            FocusGroups.ForEach(x => Destroy(x));
         }
 
         FocusLayer = new List<GameObject>();
@@ -196,7 +191,8 @@ public class ObjectsPlacementController : MonoBehaviour
 
     private void MoveBySpatial(DescriptionTag spatialTag, Dictionary<DescriptionTag, ShotElement> tagItemDict)
     {
-        this.SpatialApplier.Apply(spatialTag, ref LastShotElements, tagItemDict);
+        var group = this.SpatialApplier.Apply(spatialTag, ref LastShotElements, tagItemDict);
+        FocusGroups.Add(GroupUp(group));
     }
 
     private void ApplyState(ShotElement element, GameObject objectOnScene)
@@ -204,6 +200,18 @@ public class ObjectsPlacementController : MonoBehaviour
 
     }
 
+    private GameObject GroupUp(List<GameObject> children)
+    {
+        var parent = new GameObject();
+        Vector3 pos = GroupAveragePos(children);
+        parent.transform.position = pos;
+        foreach(var child in children)
+        {
+            child.transform.parent = parent.transform;
+        }
+
+        return parent;
+    }
     public static Bounds GroupBounds(List<GameObject> group)
     {
         Bounds result = new Bounds();
@@ -251,6 +259,7 @@ public class ObjectsPlacementController : MonoBehaviour
         var lookRotation = Quaternion.LookRotation(direction);
         return lookRotation;
     }
+    
 
     //find the vector pointing from our position to the target
     

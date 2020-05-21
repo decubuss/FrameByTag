@@ -9,7 +9,7 @@ public class CharacterInput : MonoBehaviour
     private InputField AltnamesInput;
     private InputField ColorInput;
     private Button AcceptButton;
-
+    private AvailableObjectsController AOController;
     private void Start()
     {
         NameInput = transform.FindDeepChild("NameInput").GetComponent<InputField>();

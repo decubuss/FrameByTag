@@ -83,9 +83,9 @@ public class CameraSetter : MonoBehaviour
     private void ApplyThird(HorizontalThird third)
     {
         var thirdsGO = CurrentCamera.transform.Find("Thirds");
-        Transform focusTransform = BaseDetail.transform;//OPController.FocusLayer.First().transform;
+        Vector3 focusPosition = BaseDetail.transform.position;//OPController.FocusLayer.First().transform;
 
-        var relativePos = CurrentCamera.transform.InverseTransformPoint(focusTransform.position);
+        var relativePos = CurrentCamera.transform.InverseTransformPoint(focusPosition);
         thirdsGO.localPosition = new Vector3(0, 0, relativePos.z);
 
         float scaleCoef = relativePos.z / 2;
@@ -105,10 +105,19 @@ public class CameraSetter : MonoBehaviour
                 break;
         }
 
-        int Direction = (thirdPoint.x < focusTransform.position.x) ? 1 : -1;
-        //Debug.Log(Mathf.Abs(thirdPoint.x - focusTransform.position.x));
+        if(!Helper.myApproximation(thirdPoint.x, focusPosition.x, 0.1f))//Mathf.Approximately())
+        {
+            int Direction = (thirdPoint.x < focusPosition.x) ? 1 : -1;
+            CurrentCamera.transform.position = new Vector3(Mathf.Abs(thirdPoint.x - focusPosition.x), 0, 0) * Direction + ShotInitialPos;
+        }
+        else if(!Helper.myApproximation(thirdPoint.z, focusPosition.z, 0.1f))
+        {
+            int Direction = (thirdPoint.z < focusPosition.z) ? 1 : -1;
+            CurrentCamera.transform.position = new Vector3(0, 0, Mathf.Abs(thirdPoint.z - focusPosition.z)) * Direction + ShotInitialPos;
+        }
         _third = third;
-        CurrentCamera.transform.position = new Vector3(Mathf.Abs(thirdPoint.x - focusTransform.position.x), 0, 0) * Direction + ShotInitialPos;
+
+
 
     }
     private void ApplyHAngle(HorizontalAngle angle, float pow = 1)
@@ -137,8 +146,7 @@ public class CameraSetter : MonoBehaviour
             case HorizontalAngle.DeadFront:
                 calculatedRot.y = Quaternion.Euler(-30f, 0, 0).x;
                 debugline += angle.ToString();
-                //rotate around focus group, recognisable +offset to default Zrotation
-                //which should be parallel to the line of view(Z vector of camera)
+                
                 break;
             case HorizontalAngle.RightAngle:
                 calculatedRot = new Vector3(initalRot.x, 180 - (Angle - yAngle), initalRot.z); 
@@ -308,15 +316,16 @@ public class CameraSetter : MonoBehaviour
     }
     public void ExecuteParameters(ShotParameters shotParameters)
     {
-        BaseDetail.CameraUnbind();
         BaseDetail.UpdatePosition(CalculateCenterOfFrame());
+        //BaseDetail.CameraUnbind();
+        //BaseDetail.UpdatePosition(CalculateCenterOfFrame());
         
         if (shotParameters.ShotType == ShotType.DefaultShot)
             DefaultShot();
         else
             this.SendMessage(shotParameters.ShotType.ToString());
-        BaseDetail.UpdateRotation();
-        BaseDetail.CameraBind();
+        //BaseDetail.UpdateRotation();
+        //BaseDetail.CameraBind();
 
         isFromBehind = shotParameters.isfromBehind;
         _shot = shotParameters.ShotType;
@@ -335,12 +344,7 @@ public class CameraSetter : MonoBehaviour
         float cameraNewHeight = (boneTransform.right * -1f * 0.07f).y + boneTransform.position.y;
 
         CurrentCamera.transform.position = new Vector3(CurrentCamera.transform.position.x, cameraNewHeight, CurrentCamera.transform.position.z);
-        //get object's bone
-        //get object actual size
-        //set camera new location depend on object's actual size 
-        //set camera rotation to look at chosen bone
         ShotInitialPos = CurrentCamera.transform.position;
-        Debug.Log("Extremely Close shot");
         _shot = ShotType.CloseShot;
 
     }
@@ -351,30 +355,19 @@ public class CameraSetter : MonoBehaviour
         CurrentCamera.transform.position = new Vector3(CurrentCamera.transform.position.x, cameraNewHeight, CurrentCamera.transform.position.z);
 
         ShotInitialPos = CurrentCamera.transform.position;
-
         _shot = ShotType.MediumShot;
-
     }
     public void LongShot()
     {
         DefaultShot();
-        //CalcFocusedObjectsBounds();
         ShotInitialPos = CurrentCamera.transform.position;
-        //ParentGO.transform.position = Vector3.Lerp(LeftObjectsLimit, RightObjectsLimit, coef);
         _shot = ShotType.LongShot;
 
     }
     public void ExtremelyLongShot()
     {
-        //get object actual size
-        //find distance between object and camera, so that environment could fit into camera view 
         DefaultShot(0.07f);
-
-        //after that rot is 0
-        //get a screen space used by focus layer
-        //keep going back until used screenspace is 3-5%
         _shot = ShotType.ExtremelyLongShot;
-
     }
     #endregion
 
