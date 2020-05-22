@@ -29,9 +29,9 @@ public class CameraSetter : MonoBehaviour
     public Camera CurrentCamera;
     private ObjectsPlacementController OPController;
     private CameraParametersHandler CPHandler;
-    private FrameAttributes Frame;
+    private Vector3 CenterOfFrame;
 
-    private Vector3 ShotInitialPos;
+    private Vector3 CameraInitialPos;
 
     [SerializeField]
     private HorizontalThird _third;
@@ -43,10 +43,11 @@ public class CameraSetter : MonoBehaviour
     private ShotType _shot;
     [SerializeField]
     private bool isFromBehind;
-    // Start is called before the first frame update
+
+    private List<GameObject> FocusGroup;
+
     void Start()
     {
-        Frame = new FrameAttributes();
         OPController = FindObjectOfType<ObjectsPlacementController>();
         CPHandler = new CameraParametersHandler(this);
         CurrentCamera = Camera.main;
@@ -66,7 +67,6 @@ public class CameraSetter : MonoBehaviour
         _verticalAngle = VerticalAngle.EyeLevel;
         _horizontalAngle = HorizontalAngle.Front;
 
-        //BuildNewShot();
         ExecuteParameters(CPHandler.DefaultParams);
         ObjectsPlacementController.OnStartupEndedEvent -= StartupShot;
     }
@@ -77,13 +77,13 @@ public class CameraSetter : MonoBehaviour
     private void DefaultShot(float springArmLenCoef = 0.37f)
     {
         CurrentCamera.transform.position = CalculateCameraPosition(springArmLenCoef);
-        CurrentCamera.transform.rotation = CalculateCameraRotation(Frame.CenterOfFrame);
-        ShotInitialPos = CurrentCamera.transform.position;
+        CurrentCamera.transform.rotation = CalculateCameraRotation(CenterOfFrame);
+        CameraInitialPos = CurrentCamera.transform.position;
     }
     private void ApplyThird(HorizontalThird third)
     {
         var thirdsGO = CurrentCamera.transform.Find("Thirds");
-        Vector3 focusPosition = BaseDetail.transform.position;//OPController.FocusLayer.First().transform;
+        Vector3 focusPosition = BaseDetail.transform.position;
 
         var relativePos = CurrentCamera.transform.InverseTransformPoint(focusPosition);
         thirdsGO.localPosition = new Vector3(0, 0, relativePos.z);
@@ -105,15 +105,15 @@ public class CameraSetter : MonoBehaviour
                 break;
         }
 
-        if(!Helper.myApproximation(thirdPoint.x, focusPosition.x, 0.1f))//Mathf.Approximately())
+        if(!Helper.myApproximation(thirdPoint.x, focusPosition.x, 0.1f))
         {
             int Direction = (thirdPoint.x < focusPosition.x) ? 1 : -1;
-            CurrentCamera.transform.position = new Vector3(Mathf.Abs(thirdPoint.x - focusPosition.x), 0, 0) * Direction + ShotInitialPos;
+            CurrentCamera.transform.position = new Vector3(Mathf.Abs(thirdPoint.x - focusPosition.x), 0, 0) * Direction + CameraInitialPos;
         }
         else if(!Helper.myApproximation(thirdPoint.z, focusPosition.z, 0.1f))
         {
             int Direction = (thirdPoint.z < focusPosition.z) ? 1 : -1;
-            CurrentCamera.transform.position = new Vector3(0, 0, Mathf.Abs(thirdPoint.z - focusPosition.z)) * Direction + ShotInitialPos;
+            CurrentCamera.transform.position = new Vector3(0, 0, Mathf.Abs(thirdPoint.z - focusPosition.z)) * Direction + CameraInitialPos;
         }
         _third = third;
 
@@ -125,88 +125,73 @@ public class CameraSetter : MonoBehaviour
         Vector3 calculatedRot = BaseDetail.transform.eulerAngles;
         Vector3 initalRot = BaseDetail.transform.eulerAngles;
 
-        var focus = new Vector3(BaseDetail.transform.forward.x, 0, BaseDetail.transform.forward.z);//_baseDetail.transform.forward.z
+        var focus = new Vector3(BaseDetail.transform.forward.x, 0, BaseDetail.transform.forward.z);
 
-        var camera = BaseDetail.transform.position - CurrentCamera.transform.position ;
-        camera = new Vector3(camera.x, 0, camera.z);
+        var cameraPos = BaseDetail.transform.position - CurrentCamera.transform.position ;
+        cameraPos = new Vector3(cameraPos.x, 0, cameraPos.z);
 
-        float Angle = Vector3.Angle(focus, camera);
-        Vector3 cross = Vector3.Cross(focus, camera);
-        Angle = cross.y < 0 ? -Angle : Angle;
-        string debugline = "Horizontal angle: ";
+        float deltaAngle = Vector3.Angle(focus, cameraPos);
+        Vector3 cross = Vector3.Cross(focus, cameraPos);
+        deltaAngle = cross.y < 0 ? -deltaAngle : deltaAngle;
 
-        //var pow = UnityEngine.Random.Range(0.05f, 1f);
         float yAngle = Mathf.Lerp(15f, 45f, pow);
         switch (angle)
         {
             case HorizontalAngle.Front:
-                calculatedRot = new Vector3(initalRot.x, 180 - Angle, initalRot.z);//_baseDetail.transform.rotation.x
-                debugline += angle.ToString();
+                calculatedRot = new Vector3(initalRot.x, 180 - deltaAngle, initalRot.z);
                 break;
             case HorizontalAngle.DeadFront:
                 calculatedRot.y = Quaternion.Euler(-30f, 0, 0).x;
-                debugline += angle.ToString();
-                
                 break;
             case HorizontalAngle.RightAngle:
-                calculatedRot = new Vector3(initalRot.x, 180 - (Angle - yAngle), initalRot.z); 
-                debugline += angle.ToString();
-
+                calculatedRot = new Vector3(initalRot.x, 180 - (deltaAngle - yAngle), initalRot.z); 
                 break;
             case HorizontalAngle.LeftAngle:
-
-                calculatedRot = new Vector3(initalRot.x, 180 - (Angle + yAngle), initalRot.z);
-                debugline += angle.ToString();
-
+                calculatedRot = new Vector3(initalRot.x, 180 - (deltaAngle + yAngle), initalRot.z);
                 break;
-            
         }
         _horizontalAngle = angle;
         calculatedRot = isFromBehind ? new Vector3(calculatedRot.x, calculatedRot.y + 180, calculatedRot.z) 
                                      : calculatedRot;
-        //calculatedRot.y = 180 - Angle > 180f ? calculatedRot.y * -1 : calculatedRot.y;
         BaseDetail.transform.eulerAngles = calculatedRot;
     }
     private void ApplyVAngle(VerticalAngle angle, float pow = 1)
     {
         var CalculatedRot = BaseDetail.transform.eulerAngles;
         Vector3 initialRot = BaseDetail.transform.eulerAngles;
-        string debugline = "Vertical angle: ";
         switch (angle)
         {
             case VerticalAngle.BirdsEye:
                 CalculatedRot = new Vector3(-60f, initialRot.y, initialRot.z);
-                debugline += angle.ToString();
                 break;
             case VerticalAngle.High:
                 CalculatedRot = new Vector3(-30f, initialRot.y, initialRot.z);
-                debugline += angle.ToString();
                 break;
             case VerticalAngle.EyeLevel:
                 CalculatedRot = initialRot;
-                debugline += angle.ToString();
                 break;
             case VerticalAngle.Low:
                 CalculatedRot = new Vector3(30f, initialRot.y, initialRot.z);
-                debugline += angle.ToString();
                 break;
             case VerticalAngle.MouseEye:
                 CalculatedRot = new Vector3(60f, initialRot.y, initialRot.z);
-                debugline += angle.ToString();
                 break;
         }
-        //Debug.Log(debugline);
         _verticalAngle = angle;
         BaseDetail.transform.eulerAngles = CalculatedRot;
     }
     private Vector3 CalculateCameraPosition(float springArmCoef)
     {
-        Frame.CenterOfFrame = CalculateCenterOfFrame();
-        Vector3 PerpendicularDirection = Vector3.zero;
-        var SpringArmLength = CalculateSpringArmLength(Frame.CenterOfFrame, springArmCoef);
+        FocusGroup = OPController.FocusGroups.Count != 0 ?
+                                                    OPController.FocusGroups.First().GetAllChildren() :
+                                                    OPController.FocusLayer;
 
-        PerpendicularDirection = CalculatePerpendicularDirection();
-        return Frame.CenterOfFrame + (SpringArmLength * PerpendicularDirection);
+
+        CenterOfFrame = CalculateCenterOfFrame(FocusGroup);
+        var SpringArmLength = CalculateSpringArmLength(CenterOfFrame, springArmCoef, FocusGroup);
+
+        Vector3 PerpendicularDirection = CalculatePerpendicularDirection(FocusGroup);
+        return CenterOfFrame + (SpringArmLength * PerpendicularDirection);
     }
 
     #region calculations
@@ -217,36 +202,44 @@ public class CameraSetter : MonoBehaviour
     /// <returns>
     /// Returns a Vector3 position 
     /// </returns>
-    private Vector3 CalculateCenterOfFrame()
+    private Vector3 CalculateCenterOfFrame(List<GameObject> focusGroup = null)
     {
-        var focusFirst = OPController.FocusLayer.First();
-        var focusLast = OPController.FocusLayer.Last();
+        Vector3 resultPoint;
+        if(focusGroup == null)
+        {
+            focusGroup = OPController.FocusGroups.Count != 0 ?
+                                                    OPController.FocusGroups.First().GetAllChildren() :
+                                                    OPController.FocusLayer;
+        }
+
+        var focusFirst = focusGroup.First();
+        var focusLast = focusGroup.Last();
 
         Vector3 ResultPoint = focusFirst.transform.position + ((focusLast.transform.position - focusFirst.transform.position) / 2);
-        ResultPoint.y = OPController.FocusLayer.OrderByDescending(x => x.GetComponent<SceneObject>().Bounds.size.y)
-                                                        .First()
-                                                        .GetComponent<SceneObject>()
-                                                        .Bounds.size.y / 2;
+        ResultPoint.y = focusGroup.OrderByDescending(x => x.GetComponent<SceneObject>().Bounds.size.y)
+                                                            .First()
+                                                            .GetComponent<SceneObject>()
+                                                            .Bounds.size.y / 2;
+        
         return ResultPoint;
     }
-    private float CalculateSpringArmLength(Vector3 CenterOfFrame, float GivenCoefficient)
+    private float CalculateSpringArmLength(Vector3 CenterOfFrame, float GivenCoefficient, List<GameObject> focusGroup)
     {
         var TopPoint = CenterOfFrame;
         TopPoint.y = CenterOfFrame.y * 2;
         var BottomPoint = CenterOfFrame;
         BottomPoint.y = 0;
 
-        var FObjects = OPController.FocusLayer;
-        var SpringArmLength = 0f;
+        float SpringArmLength;
 
         float maxHeight = 0;
-        foreach (GameObject inFocus in FObjects)
+        foreach (GameObject inFocus in focusGroup)
         {
             if (maxHeight < inFocus.GetComponent<SceneObject>().Height)
                 maxHeight = inFocus.GetComponent<SceneObject>().Height;
         }
-        float Width = Vector3.Distance(FObjects.First().transform.position, FObjects.Last().transform.position) + 
-                      (FObjects.First().GetComponent<SceneObject>().Width + FObjects.First().GetComponent<SceneObject>().Width)/2;
+        float Width = Vector3.Distance(focusGroup.First().transform.position, focusGroup.Last().transform.position) + 
+                      (focusGroup.First().GetComponent<SceneObject>().Width + focusGroup.First().GetComponent<SceneObject>().Width)/2;
         if (maxHeight > Width)
         {
             SpringArmLength = (float)((Vector3.Distance(TopPoint, BottomPoint) / 2) / GivenCoefficient);
@@ -255,30 +248,15 @@ public class CameraSetter : MonoBehaviour
         {
             SpringArmLength = (float)(Width / Mathf.Tan(45));
         }
-
         return SpringArmLength;
     }
-    private Vector3 CalculatePerpendicularDirection()
+    private Vector3 CalculatePerpendicularDirection(List<GameObject> focusGroup)
     {
-        var DirectionVector = Vector3.zero;
-
-        var FObjects = OPController.FocusLayer;
-        if (FObjects.Count > 1)
-        {
-            DirectionVector = Vector3.Cross(FObjects[0].transform.position - FObjects[FObjects.Count - 1].transform.position, Vector3.up);
-            DirectionVector.Normalize();
-            return DirectionVector;
-        }
-        else if(FObjects.Count == 1)
-        {
-            DirectionVector = FObjects[0].transform.forward;
-            DirectionVector.Normalize();
-            return DirectionVector;
-        }
-        else
-        {
-            return Vector3.forward.normalized;
-        }
+        var DirectionVector = focusGroup.Count >=2 ? 
+                            Vector3.Cross(focusGroup.First().transform.position - focusGroup.Last().transform.position, Vector3.up) :
+                            focusGroup[0].transform.forward;
+        DirectionVector.Normalize();
+        return DirectionVector;
     }
     private Quaternion CalculateCameraRotation(Vector3 CenterOfFrame)
     {
@@ -289,7 +267,7 @@ public class CameraSetter : MonoBehaviour
     private float GetFObjectsWidth()
     {
         float ResultWidth = 0;
-        foreach (GameObject FocusedObject in OPController.FocusLayer)
+        foreach (var FocusedObject in FocusGroup)
         {
             ResultWidth += FocusedObject.GetComponent<SceneObject>().Width;
         }
@@ -298,7 +276,7 @@ public class CameraSetter : MonoBehaviour
     private float GetFObjectsHeight()
     {
         float maxHeight = 0;
-        foreach(var Object in OPController.FocusLayer)//TODO: update focused objects on event
+        foreach(var Object in FocusGroup)
         {
             if(maxHeight < Object.GetComponent<SceneObject>().Height)
             {
@@ -310,29 +288,25 @@ public class CameraSetter : MonoBehaviour
     #endregion
     public void BuildNewShot()
     {
-        var shotParameters = CPHandler.ShotParametersHandle(FrameDescription.RawFrameInput);//ObjectsPlacementHandler.LastTaggedInput);//
-
+        var shotParameters = CPHandler.ShotParametersHandle(FrameDescription.RawFrameInput);
         ExecuteParameters(shotParameters);
     }
     public void ExecuteParameters(ShotParameters shotParameters)
     {
         BaseDetail.UpdatePosition(CalculateCenterOfFrame());
-        //BaseDetail.CameraUnbind();
-        //BaseDetail.UpdatePosition(CalculateCenterOfFrame());
-        
+                
         if (shotParameters.ShotType == ShotType.DefaultShot)
             DefaultShot();
         else
             this.SendMessage(shotParameters.ShotType.ToString());
-        //BaseDetail.UpdateRotation();
-        //BaseDetail.CameraBind();
-
+        
         isFromBehind = shotParameters.isfromBehind;
         _shot = shotParameters.ShotType;
         ApplyThird(shotParameters.Third);
         ApplyVAngle(shotParameters.VAngle);
         ApplyHAngle(shotParameters.HAngle);
         ObjectsPlacementController.OnContentPreparedEvent -= BuildNewShot;
+        CompositionCorrector.CorrectGroups(CurrentCamera, OPController, _third);
     }
 
     #region shots
@@ -344,9 +318,8 @@ public class CameraSetter : MonoBehaviour
         float cameraNewHeight = (boneTransform.right * -1f * 0.07f).y + boneTransform.position.y;
 
         CurrentCamera.transform.position = new Vector3(CurrentCamera.transform.position.x, cameraNewHeight, CurrentCamera.transform.position.z);
-        ShotInitialPos = CurrentCamera.transform.position;
+        CameraInitialPos = CurrentCamera.transform.position;
         _shot = ShotType.CloseShot;
-
     }
     public void MediumShot()
     {
@@ -354,13 +327,13 @@ public class CameraSetter : MonoBehaviour
         float cameraNewHeight = (float)(GetFObjectsHeight() * 0.75);
         CurrentCamera.transform.position = new Vector3(CurrentCamera.transform.position.x, cameraNewHeight, CurrentCamera.transform.position.z);
 
-        ShotInitialPos = CurrentCamera.transform.position;
+        CameraInitialPos = CurrentCamera.transform.position;
         _shot = ShotType.MediumShot;
     }
     public void LongShot()
     {
         DefaultShot();
-        ShotInitialPos = CurrentCamera.transform.position;
+        CameraInitialPos = CurrentCamera.transform.position;
         _shot = ShotType.LongShot;
 
     }

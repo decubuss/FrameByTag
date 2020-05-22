@@ -335,7 +335,7 @@ GameObject:
   - component: {fileID: 282683991}
   - component: {fileID: 282683990}
   - component: {fileID: 282683989}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: FirstThird
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -351,7 +351,7 @@ Transform:
   m_GameObject: {fileID: 282683987}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.8, y: 0, z: 0}
-  m_LocalScale: {x: 0.2, y: 1.9, z: 0.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1583101242}
   m_RootOrder: 0
@@ -367,7 +367,7 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
+  m_Size: {x: 0.2, y: 1.9, z: 0.1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &282683990
 MeshRenderer:
@@ -2716,7 +2716,7 @@ GameObject:
   - component: {fileID: 1343810569}
   - component: {fileID: 1343810568}
   - component: {fileID: 1343810567}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3360,7 +3360,7 @@ GameObject:
   - component: {fileID: 1560293431}
   - component: {fileID: 1560293430}
   - component: {fileID: 1560293429}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: LastThird
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3376,7 +3376,7 @@ Transform:
   m_GameObject: {fileID: 1560293427}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0.8, y: 0, z: 0}
-  m_LocalScale: {x: 0.2, y: 1.9, z: 0.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1583101242}
   m_RootOrder: 2
@@ -3392,7 +3392,7 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
+  m_Size: {x: 0.2, y: 1.9, z: 0.1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &1560293430
 MeshRenderer:
@@ -3449,7 +3449,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1583101242}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Thirds
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3884,7 +3884,7 @@ MonoBehaviour:
   FocusLayer: []
   AdditiveLayer: []
   BackgroundLayer: []
-  GroundMesh: {fileID: 0}
+  GroundMesh: {fileID: 1343810566}
 --- !u!4 &1894941941
 Transform:
   m_ObjectHideFlags: 0
@@ -4173,7 +4173,7 @@ GameObject:
   - component: {fileID: 2121367894}
   - component: {fileID: 2121367893}
   - component: {fileID: 2121367892}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Center
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4189,7 +4189,7 @@ Transform:
   m_GameObject: {fileID: 2121367890}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.2, y: 1.9, z: 0.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1583101242}
   m_RootOrder: 1
@@ -4205,7 +4205,7 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
+  m_Size: {x: 0.2, y: 1.9, z: 0.1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &2121367893
 MeshRenderer:

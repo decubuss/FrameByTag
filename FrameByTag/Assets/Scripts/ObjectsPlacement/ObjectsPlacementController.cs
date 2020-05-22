@@ -28,7 +28,6 @@ public class ObjectsPlacementController : MonoBehaviour
     {
         AOController = new AvailableObjectsController();
         SpatialApplier = new SpatialApplier();
-
         LastShotElements = new Dictionary<ShotElement, GameObject>();
         var DescriptionHandler = new ObjectsPlacementHandler();
 
@@ -70,15 +69,30 @@ public class ObjectsPlacementController : MonoBehaviour
         var tags = tagItemDict.Keys.ToList();
         var elements = tagItemDict.Values.Where(x => x != null).ToList();
         if (tagItemDict == LastExecutedTagItemDict || elements.Count == 0)
-        {
-            //OnContentPreparedEvent?.Invoke();
-            return;
-        }
+            return;//OnContentPreparedEvent?.Invoke();
         else
-        {
             ClearScene();
+        SpawnAllElements(tags, elements);
+
+        foreach (var dictElem in tagItemDict.Keys.Where(x => x.TagType == TagType.Spatial))
+        {
+            MoveBySpatial(dictElem, tagItemDict);
         }
 
+        var group = LastShotElements.Where(x=>x.Value.transform.parent == null)//(x => x.Key.Layer > 1)
+                                    .ToDictionary(g => g.Key,g=>g.Value)
+                                    .Values
+                                    .ToList();
+        FocusGroups.Add(GroupUp(group));
+        
+
+        if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
+            SceneDefaultContentSetup();
+        LastExecutedTagItemDict = tagItemDict;
+    }
+
+    private void SpawnAllElements(List<DescriptionTag> tags, List<ShotElement> elements)
+    {
         int maxLayer = elements.Max(x => x.Layer);
         for (int i = 0; i <= maxLayer; i++)
         {
@@ -100,17 +114,8 @@ public class ObjectsPlacementController : MonoBehaviour
             }
 
         }
-
-        foreach (var dictElem in tagItemDict.Keys.Where(x => x.TagType == TagType.Spatial))
-        {
-            MoveBySpatial(dictElem, tagItemDict);
-        }
-
-        if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
-            SceneDefaultContentSetup();
-
-        LastExecutedTagItemDict = tagItemDict;
     }
+
     private void ClearScene()
     {
         if (FocusLayer.Count != 0)
@@ -260,7 +265,7 @@ public class ObjectsPlacementController : MonoBehaviour
         return lookRotation;
     }
     
-
+    
     //find the vector pointing from our position to the target
     
     

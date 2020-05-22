@@ -41,35 +41,34 @@ public static class ShotsStatsExtension
     {
         var usefulParts = sentenceParts.Where(x => UsefulTypes.Contains(x.Type));
         var groups = usefulParts.GroupBy(x=>x.Type).Select(g => new { Type = g.Key, Count = g.Count() });
-        var baseElement = groups.OrderByDescending(x=>x.Count).First();
+        //var baseElement = groups.OrderByDescending(x=>x.Count).First();
 
-        switch (baseElement.Type)
+        foreach (var baseElement in usefulParts)
         {
-            case "NNS":
-                shots[ShotType.LongShot] += 0.1f;
-                shots[ShotType.ExtremelyLongShot] += 0.1f;
-                break;
-            case "NN":
-                shots[ShotType.LongShot] += 0.2f;
-                break;
-            case "VB":
-                shots[ShotType.MediumShot] += 0.2f;
-                break;
-            case "VBG":
-                shots[ShotType.MediumShot] += 0.2f;
-                break;
-            case "JJ":
-                shots[ShotType.CloseShot] += 0.1f;
-                shots[ShotType.MediumShot] += 0.1f;
-                break;
-            case "RB":
-                shots[ShotType.CloseShot] += 0.1f;
-                shots[ShotType.MediumShot] += 0.1f;
-                break;
-            default:
-                shots[ShotType.LongShot] += 0.2f;
-                break;
+            switch (baseElement.Type)
+            {
+                case "NNS":
+                    shots[ShotType.LongShot] += 0.1f;
+                    shots[ShotType.ExtremelyLongShot] += 0.1f;
+                    break;
+                case "NN":
+                    shots[ShotType.LongShot] += 0.2f;
+                    break;
+                case "VBG":
+                case "VB":
+                    shots[ShotType.MediumShot] += 0.2f;
+                    break;
+                case "RB":
+                case "JJ":
+                    shots[ShotType.CloseShot] += 0.1f;
+                    shots[ShotType.MediumShot] += 0.1f;
+                    break;
+                default:
+                    shots[ShotType.LongShot] += 0.2f;
+                    break;
+            }
         }
+        
 
         return shots;
     }

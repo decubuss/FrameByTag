@@ -107,7 +107,14 @@ public static class Helper
         }
         return null;
     }
-
+    public static List<GameObject> GetAllChildren(this GameObject go)
+    {
+        var result = new List<GameObject>();
+        int children = go.transform.childCount;
+        for (int i = 0; i < children; ++i)
+            result.Add(go.transform.GetChild(i).gameObject);
+        return result;
+    }
     public static string LemmatizeOne(string word)
     {
         ILemmatizer lmtz = new LemmatizerPrebuiltFull(LemmaSharp.LanguagePrebuilt.English);
