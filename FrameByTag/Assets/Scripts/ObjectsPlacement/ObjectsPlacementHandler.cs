@@ -48,15 +48,14 @@ public class ObjectsPlacementHandler
         processedInput = HandleStates(processedInput, ref tagItemSeq);
         HandleRelations(processedInput, ref tagItemSeq);
 
-        foreach (var tag in tagItemSeq.Keys)
-        {
-            string woof = tagItemSeq[tag] != null ? tagItemSeq[tag].ToString() : "";
-            if (tag != null)
-                Debug.Log(tag.ToString() + " <<>> " + woof);
-        }
+        //foreach (var tag in tagItemSeq.Keys)
+        //{
+        //    string woof = tagItemSeq[tag] != null ? tagItemSeq[tag].ToString() : "";
+        //    if (tag != null)
+        //        Debug.Log(tag.ToString() + " <<>> " + woof);
+        //}
 
         LastTaggedInput = processedInput;
-        //Debug.Log(processedInput);
         OnSentenceProcessedEvent?.Invoke(tagItemSeq);
     }
     private string HandleItems(string rawinput, ref Dictionary<DescriptionTag, ShotElement> itemTags)
@@ -158,10 +157,11 @@ public class ObjectsPlacementHandler
         {
             var spatialPair = SpatialApplier.GetSpatial(spatialTag.Keyword)
                                             .FindSpatialSubject(itemTags, spatialTag.Index);
-
-            spatialPair.Value.State = dupSequence.Where(x => x.Key.TagType == TagType.Action && x.Key.Index < spatialPair.Key.Index)
+            if(dupSequence.FirstOrDefault(x=>x.Key.TagType==TagType.Action).Key != null)
+                spatialPair.Value.State = dupSequence.Where(x => x.Key.TagType == TagType.Action && x.Key.Index < spatialPair.Key.Index)
                                               .OrderByDescending(x => x.Key.Index)
                                               .Last().Key.Keyword;
+
             itemTags[spatialPair.Key] = spatialPair.Value;
 
             int subjLayer = spatialPair.Value.Layer;

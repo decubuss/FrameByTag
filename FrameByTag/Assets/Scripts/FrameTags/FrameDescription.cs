@@ -18,6 +18,7 @@ public class FrameDescription : MonoBehaviour
     public InputField DescriptionSource;
 
     public static string RawFrameInput;
+    private string LastSceneTags = "";
     public static Parse[] ParsedParts;
 
     public delegate void OnDescriptionChangeDelegate(string Input);
@@ -36,15 +37,15 @@ public class FrameDescription : MonoBehaviour
         if (!string.IsNullOrWhiteSpace(DescriptionSource.text) && DescriptionSource.text != RawFrameInput)
         {
             RawFrameInput = DescriptionSource.text;
-            string itemMarkedInput = Helper.ExcludeCameraTags(RawFrameInput);
-            
-            if (!string.IsNullOrEmpty(itemMarkedInput))
+            string itemMarkedInput = RawFrameInput.ExcludeCameraTags();
+            if (!string.IsNullOrEmpty(itemMarkedInput) && !Equals(LastSceneTags, itemMarkedInput))
             {
+                LastSceneTags = itemMarkedInput;
                 itemMarkedInput = MarkItems(itemMarkedInput);
                 ParsedParts = TreeParsing(itemMarkedInput).ToArray();
             }
-            else
-                ParsedParts = null;
+            //else
+            //    ParsedParts = null;
 
             OnDescriptionChangedEvent?.Invoke(RawFrameInput);
         }
@@ -52,6 +53,7 @@ public class FrameDescription : MonoBehaviour
     private Parse[] TreeParsing(string input)
     {
         //DateTime before = DateTime.Now;
+        Debug.Log("+" + input + "+");
 
         var modelPath = Directory.GetCurrentDirectory() + @"\Models\";
         var parser = new EnglishTreebankParser(modelPath);

@@ -3,6 +3,35 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
+public static class ModelExtension
+{
+    public static Bounds GetBounds(this GameObject go)
+    {
+        Bounds resultBounds;
+        if (go.GetComponent<MeshFilter>() != null)
+            resultBounds = go.GetComponent<MeshFilter>().mesh.bounds;
+        else if (go.GetComponentInChildren<MeshFilter>() != null)
+            resultBounds = go.GetComponentInChildren<MeshFilter>().sharedMesh.bounds;
+        else if (go.GetComponentInChildren<SkinnedMeshRenderer>() != null)
+            resultBounds = go.GetComponentInChildren<SkinnedMeshRenderer>().bounds;
+        else
+        {
+            Debug.LogError("no bounds on " + go.name);
+            resultBounds = new Bounds();
+        }
+
+        var scale = go.transform.localScale;
+        var vector = new Vector3(resultBounds.size.x * scale.x, resultBounds.size.y * scale.y, resultBounds.size.z * scale.z);
+        resultBounds = new Bounds(resultBounds.center, vector);
+        return resultBounds;
+    }
+    public static float GetVolume(this Bounds bounds)
+    {
+        float volume = bounds.extents.x * bounds.extents.y * bounds.extents.z;
+        return volume;
+    }
+}
+
 public class SceneObject : MonoBehaviour, INameAlternatable
 {
     [SerializeField]
@@ -99,20 +128,31 @@ public class SceneObject : MonoBehaviour, INameAlternatable
     private Bounds GetObjectBounds()
     {
         Bounds resultBounds;
-        if (gameObject.GetComponent<MeshFilter>() != null)
-            resultBounds= gameObject.GetComponent<MeshFilter>().mesh.bounds;
-        else if (gameObject.GetComponentInChildren<MeshFilter>() != null)
-            resultBounds = gameObject.GetComponentInChildren<MeshFilter>().sharedMesh.bounds;
-        else if (gameObject.GetComponentInChildren<SkinnedMeshRenderer>() != null)
-            resultBounds = gameObject.GetComponentInChildren<SkinnedMeshRenderer>().bounds;
+
+        if (gameObject.GetBounds() != null)
+            resultBounds = gameObject.GetBounds();
+        else if (gameObject.transform.childCount > 0)
+        {
+            resultBounds = GetOverallBounds(gameObject.GetAllChildren());
+        }
         else
         {
             Debug.LogError("no bounds on " + gameObject.name);
             return new Bounds();
         }
-        var scale = gameObject.transform.localScale;
-        var vector = new Vector3(resultBounds.size.x * scale.x, resultBounds.size.y * scale.y, resultBounds.size.z * scale.z);
-        resultBounds = new Bounds(resultBounds.center, vector);
+
+        //var scale = gameObject.transform.localScale;
+        //var vector = new Vector3(resultBounds.size.x * scale.x, resultBounds.size.y * scale.y, resultBounds.size.z * scale.z);
+        //resultBounds = new Bounds(resultBounds.center, vector);
+        return resultBounds;
+    }
+    private Bounds GetOverallBounds(List<GameObject> children)
+    {
+        Bounds resultBounds = new Bounds();
+        foreach(var child in children)
+        {
+            resultBounds.Encapsulate(child.GetBounds());
+        }
         return resultBounds;
     }
     public Dictionary<string,string> GetAlternateNames()
@@ -178,4 +218,10 @@ public class SceneObject : MonoBehaviour, INameAlternatable
             return Animator;
         }
     }
+
+    
+
+
+    
+
 }

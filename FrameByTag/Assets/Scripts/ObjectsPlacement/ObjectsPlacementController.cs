@@ -79,11 +79,19 @@ public class ObjectsPlacementController : MonoBehaviour
             MoveBySpatial(dictElem, tagItemDict);
         }
 
-        var group = LastShotElements.Where(x=>x.Value.transform.parent == null)//(x => x.Key.Layer > 1)
+        var unparenetedGroup = LastShotElements.Where(x=>x.Value.transform.parent == null)//(x => x.Key.Layer > 1)
                                     .ToDictionary(g => g.Key,g=>g.Value)
                                     .Values
                                     .ToList();
-        FocusGroups.Add(GroupUp(group));
+        if (unparenetedGroup.Count > 1 && FrameDescription.ParsedParts.FirstOrDefault(x=>x.Text==",") != null)
+        {
+            GameObject orphange = GroupUp(unparenetedGroup);
+            orphange.name = "Orphange";
+            if(FocusGroups.Count > 1)
+                orphange.transform.position = new Vector3(-10000f, -10000, -10000f);
+            FocusGroups.Add(orphange);
+        }
+       
         
 
         if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
@@ -156,7 +164,7 @@ public class ObjectsPlacementController : MonoBehaviour
 
             Vector3 newObjectPos = Vector3.zero;
             newObjectPos.x -= FocusLayer.Count == 0 ? 0f : (FocusLayer[FocusLayer.Count - 1].GetComponent<SceneObject>().Bounds.size.x / 2
-                    + sceneGO.GetComponent<SceneObject>().Bounds.size.x / 2);
+                    + sceneGO.GetComponent<SceneObject>().Bounds.size.x / 2) /2;
 
             sceneGO.transform.position = newObjectPos;//TODO: not one but calculated shit
             sceneGO.name = obj.name;

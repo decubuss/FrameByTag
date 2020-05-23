@@ -182,10 +182,14 @@ public class CameraSetter : MonoBehaviour
     }
     private Vector3 CalculateCameraPosition(float springArmCoef)
     {
-        FocusGroup = OPController.FocusGroups.Count != 0 ?
-                                                    OPController.FocusGroups.First().GetAllChildren() :
-                                                    OPController.FocusLayer;
-
+        //FocusGroup = OPController.FocusGroups.Count != 0 ?
+        //                                            OPController.FocusGroups.First().GetAllChildren() :
+        //                                            OPController.FocusLayer;
+        var exception = OPController.FocusGroups.FirstOrDefault(x => x.name == "Orphange");
+        if (exception != null)
+            FocusGroup = OPController.FocusLayer.Except(exception.GetAllChildren()).ToList();
+        else
+            FocusGroup = OPController.FocusLayer;
 
         CenterOfFrame = CalculateCenterOfFrame(FocusGroup);
         var SpringArmLength = CalculateSpringArmLength(CenterOfFrame, springArmCoef, FocusGroup);
@@ -306,7 +310,8 @@ public class CameraSetter : MonoBehaviour
         ApplyVAngle(shotParameters.VAngle);
         ApplyHAngle(shotParameters.HAngle);
         ObjectsPlacementController.OnContentPreparedEvent -= BuildNewShot;
-        CompositionCorrector.CorrectGroups(CurrentCamera, OPController, _third);
+        if(OPController.FocusGroups.FirstOrDefault(x=>x.name=="Orphange"))
+            CompositionCorrector.CorrectGroups(CurrentCamera, OPController, _third);
     }
 
     #region shots

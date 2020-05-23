@@ -39,7 +39,7 @@ public static class Helper
             return false;
     }
 
-    public static string ExcludeCameraTags(string input)
+    public static string ExcludeCameraTags(this string input)
     {
         string result = input;
         foreach (var tag in DictSortByLength(CameraParametersHandler.CameraParametersAltNames))
@@ -51,6 +51,7 @@ public static class Helper
             else if (result.Contains(tag.Key))
                 result = result.Replace(tag.Key, "");
         }
+        result = result.Last() == ' ' ? result.Remove(result.Length - 1) : result;
         return result;
     }
     public static string MakeCapitalLetter(this string word)
