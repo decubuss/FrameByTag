@@ -158,6 +158,7 @@ public class CameraSetter : MonoBehaviour
     private void ApplyVAngle(VerticalAngle angle, float pow = 1)
     {
         var CalculatedRot = BaseDetail.transform.eulerAngles;
+        //CalculatedRot = BaseDetail.transform.RotateAround(BaseDetail.transform.position, CurrentCamera.transform.right, -30f);
         Vector3 initialRot = BaseDetail.transform.eulerAngles;
         switch (angle)
         {
@@ -165,7 +166,8 @@ public class CameraSetter : MonoBehaviour
                 CalculatedRot = new Vector3(-60f, initialRot.y, initialRot.z);
                 break;
             case VerticalAngle.High:
-                CalculatedRot = new Vector3(-30f, initialRot.y, initialRot.z);
+                //CalculatedRot = new Vector3(-30f, initialRot.y, initialRot.z);
+                CalculatedRot = BaseDetail.transform.position.RotatePointAroundPivot(CurrentCamera.transform.position, new Vector3(-30f, initialRot.y, 0));
                 break;
             case VerticalAngle.EyeLevel:
                 CalculatedRot = initialRot;
@@ -182,14 +184,8 @@ public class CameraSetter : MonoBehaviour
     }
     private Vector3 CalculateCameraPosition(float springArmCoef)
     {
-        //FocusGroup = OPController.FocusGroups.Count != 0 ?
-        //                                            OPController.FocusGroups.First().GetAllChildren() :
-        //                                            OPController.FocusLayer;
         var exception = OPController.FocusGroups.FirstOrDefault(x => x.name == "Orphange");
-        if (exception != null)
-            FocusGroup = OPController.FocusLayer.Except(exception.GetAllChildren()).ToList();
-        else
-            FocusGroup = OPController.FocusLayer;
+        FocusGroup = exception != null? OPController.FocusLayer.Except(exception.GetAllChildren()).ToList():OPController.FocusLayer;
 
         CenterOfFrame = CalculateCenterOfFrame(FocusGroup);
         var SpringArmLength = CalculateSpringArmLength(CenterOfFrame, springArmCoef, FocusGroup);
@@ -208,23 +204,18 @@ public class CameraSetter : MonoBehaviour
     /// </returns>
     private Vector3 CalculateCenterOfFrame(List<GameObject> focusGroup = null)
     {
-        Vector3 resultPoint;
         if(focusGroup == null)
         {
-            focusGroup = OPController.FocusGroups.Count != 0 ?
-                                                    OPController.FocusGroups.First().GetAllChildren() :
-                                                    OPController.FocusLayer;
+            var exception = OPController.FocusGroups.FirstOrDefault(x => x.name == "Orphange");
+            focusGroup = FocusGroup = exception != null ? OPController.FocusLayer.Except(exception.GetAllChildren()).ToList() : FocusGroup = OPController.FocusLayer;
+            Debug.Log("Boo");
         }
-
         var focusFirst = focusGroup.First();
         var focusLast = focusGroup.Last();
-
         Vector3 ResultPoint = focusFirst.transform.position + ((focusLast.transform.position - focusFirst.transform.position) / 2);
         ResultPoint.y = focusGroup.OrderByDescending(x => x.GetComponent<SceneObject>().Bounds.size.y)
-                                                            .First()
-                                                            .GetComponent<SceneObject>()
+                                                            .First().GetComponent<SceneObject>()
                                                             .Bounds.size.y / 2;
-        
         return ResultPoint;
     }
     private float CalculateSpringArmLength(Vector3 CenterOfFrame, float GivenCoefficient, List<GameObject> focusGroup)
@@ -244,13 +235,13 @@ public class CameraSetter : MonoBehaviour
         }
         float Width = Vector3.Distance(focusGroup.First().transform.position, focusGroup.Last().transform.position) + 
                       (focusGroup.First().GetComponent<SceneObject>().Width + focusGroup.First().GetComponent<SceneObject>().Width)/2;
-        if (maxHeight > Width)
+        if (maxHeight > Width*0.6)//nothing but a magic number to fix the shot-by-width issue
         {
             SpringArmLength = (float)((Vector3.Distance(TopPoint, BottomPoint) / 2) / GivenCoefficient);
         }
         else
         {
-            SpringArmLength = (float)(Width / Mathf.Tan(45));
+            SpringArmLength = (Width / Mathf.Tan(45));
         }
         return SpringArmLength;
     }

@@ -38,9 +38,8 @@ public class ObjectsPlacementHandler
         }
 
         var input = Regex.Replace(LastRawInput, @"[!?.]+", "");
-        input = input.AddSpacesBetweenElements();//AddSpaces(input).ToLower();
+        input = input.AddSpacesBetweenElements();
 
-        //TODO: add dictionary <descriptiontags,elements>
         var tagItemSeq = new Dictionary<DescriptionTag, ShotElement>();
         
         var processedInput = HandleItems(input, ref tagItemSeq);
@@ -97,9 +96,10 @@ public class ObjectsPlacementHandler
                 var objectItemGroup = spatial.FindSpatialObject(itemTags, spatialIndex, spatialIndex);
 
                 subjectItemGroup.Value.Rank = spatial.SubjectRank;
-                subjectItemGroup.Value.Layer = subjectItemGroup.Value.Rank == ShotHierarchyRank.Addition ? 
-                                                                                objectItemGroup.First().Value.Layer : 
-                                                                                objectItemGroup.First().Value.Layer + 1;
+                subjectItemGroup.Value.Layer = objectItemGroup.First().Value.Layer;
+                //subjectItemGroup.Value.Rank == ShotHierarchyRank.Addition ? 
+                //                                                            objectItemGroup.First().Value.Layer : 
+                //                                                            objectItemGroup.First().Value.Layer + 1;
                 itemTags[subjectItemGroup.Key] = subjectItemGroup.Value;
 
                 itemTags.Add(tag, null);
@@ -176,8 +176,16 @@ public class ObjectsPlacementHandler
             }
         }
 
-        
-        //TODO: rework this thing, something isnt right
+
+        if (input.Contains(","))
+        {
+            var index  = input.GetWordIndex(",");
+            itemTags.Add( new DescriptionTag(index, ",", TagType.Sign), null);
+            foreach(var item in itemTags.Where(x=>x.Value!=null && x.Key.Index > index))
+            {
+                item.Value.Layer += 1;
+            }
+        }
     }
     
     private Parse ParseSentence(string sentence)

@@ -14,16 +14,13 @@ using System.IO;
 
 public class FrameDescription : MonoBehaviour
 {
-    //public static FrameDescription _instance;
     public InputField DescriptionSource;
-
     public static string RawFrameInput;
     private string LastSceneTags = "";
     public static Parse[] ParsedParts;
 
     public delegate void OnDescriptionChangeDelegate(string Input);
     public static event OnDescriptionChangeDelegate OnDescriptionChangedEvent;
-
     void Start()
     {
         if (DescriptionSource == null)
@@ -52,18 +49,11 @@ public class FrameDescription : MonoBehaviour
     }
     private Parse[] TreeParsing(string input)
     {
-        //DateTime before = DateTime.Now;
-        Debug.Log("+" + input + "+");
-
         var modelPath = Directory.GetCurrentDirectory() + @"\Models\";
         var parser = new EnglishTreebankParser(modelPath);
         var treeParsing = parser.DoParse(Helper.ExcludeCameraTags(input));
 
-        //DateTime after = DateTime.Now;
-        //TimeSpan duration = after.Subtract(before);
-        //Debug.Log("Duration in milliseconds: " + duration.Milliseconds);
-
-        return treeParsing.GetTagNodes();//.Show;
+        return treeParsing.GetTagNodes();
     }
     private string MarkItems(string rawInput)
     {
@@ -73,14 +63,6 @@ public class FrameDescription : MonoBehaviour
         {
             result = result.Replace(name.Key, name.Value);
         }
-
-        return result;
-    }
-    private string MarkSpatials(string rawInput)
-    {
-        string result = rawInput;
-
-        //we got code here
 
         return result;
     }

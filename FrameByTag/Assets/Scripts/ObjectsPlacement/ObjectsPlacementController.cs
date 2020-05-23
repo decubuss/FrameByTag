@@ -83,18 +83,25 @@ public class ObjectsPlacementController : MonoBehaviour
                                     .ToDictionary(g => g.Key,g=>g.Value)
                                     .Values
                                     .ToList();
-        if (unparenetedGroup.Count > 1 && FrameDescription.ParsedParts.FirstOrDefault(x=>x.Text==",") != null)
+
+        if (FocusGroups.Count > 1)// && FrameDescription.ParsedParts.FirstOrDefault(x => x.Text == ",") != null)
         {
-            GameObject orphange = GroupUp(unparenetedGroup);
+            GameObject orphange = FocusGroups.Last();
             orphange.name = "Orphange";
-            if(FocusGroups.Count > 1)
+            if (FocusGroups.Count > 1)
                 orphange.transform.position = new Vector3(-10000f, -10000, -10000f);
             FocusGroups.Add(orphange);
         }
-       
-        
+            //}
+            //else if (FocusGroups.Count == 0)
+            //{
+            //    GameObject orphange = GroupUp(unparenetedGroup);
+            //    FocusGroups.Add(orphange);
+            //}
 
-        if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
+
+
+         if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
             SceneDefaultContentSetup();
         LastExecutedTagItemDict = tagItemDict;
     }
@@ -106,20 +113,24 @@ public class ObjectsPlacementController : MonoBehaviour
         {
             var layerElements = elements.Where(x => x.Layer == i).ToList();
             layerElements = layerElements.OrderBy(x => (int)x.Rank).ToList();
+            var Layer = new List<GameObject>();
             foreach (var element in layerElements)
             {
                 switch (element.Rank)
                 {
                     case ShotHierarchyRank.InFocus:
-                        SpawnFocusedObject(element);
+                        Layer.Add(SpawnFocusedObject(element));
                         break;
                     case ShotHierarchyRank.Addition:
-                        SpawnAddition(element, tags);
+                        Layer.Add(SpawnAddition(element, tags));
                         break;
                     case ShotHierarchyRank.Background:
                         break;
                 }
             }
+
+            GameObject orphange = GroupUp(Layer);
+            FocusGroups.Add(orphange);
 
         }
     }
@@ -148,9 +159,10 @@ public class ObjectsPlacementController : MonoBehaviour
         BackgroundLayer = new List<GameObject>();
         LastExecutedTagItemDict = new Dictionary<DescriptionTag, ShotElement>();
         LastShotElements = new Dictionary<ShotElement, GameObject>();
+        FocusGroups = new List<GameObject>(); 
     }
 
-    private void SpawnFocusedObject(ShotElement element)
+    private GameObject SpawnFocusedObject(ShotElement element)
     {
         if (FocusLayer == null) { FocusLayer = new List<GameObject>(); }
         var obj = AvailableObjectsController.GetObject(element.PropName);
@@ -170,8 +182,9 @@ public class ObjectsPlacementController : MonoBehaviour
             sceneGO.name = obj.name;
             LastShotElements.Add(element, sceneGO);
             FocusLayer.Add(sceneGO);
+            return sceneGO;
         }
-
+        return null;
     }
     private void ModifySceneObject(ShotElement oldelement, ShotElement newelement)
     {
@@ -184,7 +197,7 @@ public class ObjectsPlacementController : MonoBehaviour
         if (oldelement.Layer != newelement.Layer) { }//TODO:
 
     }
-    private void SpawnAddition(ShotElement element, List<DescriptionTag> tags)
+    private GameObject SpawnAddition(ShotElement element, List<DescriptionTag> tags)
     {
         if (AdditiveLayer == null) { AdditiveLayer = new List<GameObject>(); }
 
@@ -195,7 +208,7 @@ public class ObjectsPlacementController : MonoBehaviour
         AdditiveLayer.Add(sceneGO);
         LastShotElements.Add(element, sceneGO);
 
-
+        return sceneGO;
     }
     private void BackgroundSpawn(ShotElement element)
     {

@@ -51,7 +51,7 @@ public static class Helper
             else if (result.Contains(tag.Key))
                 result = result.Replace(tag.Key, "");
         }
-        result = result.Last() == ' ' ? result.Remove(result.Length - 1) : result;
+        //result = result.Last() == ' ' ? result.Remove(result.Length - 1) : result;
         return result;
     }
     public static string MakeCapitalLetter(this string word)

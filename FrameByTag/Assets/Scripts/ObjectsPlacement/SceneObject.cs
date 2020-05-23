@@ -30,6 +30,11 @@ public static class ModelExtension
         float volume = bounds.extents.x * bounds.extents.y * bounds.extents.z;
         return volume;
     }
+    public static Vector3 RotatePointAroundPivot(this Vector3 point, Vector3 pivot, Vector3 angles)
+    {
+        return Quaternion.Euler(angles) * ((point - pivot) + pivot);
+    }
+   
 }
 
 public class SceneObject : MonoBehaviour, INameAlternatable
