@@ -166,14 +166,14 @@ public class CameraSetter : MonoBehaviour
                 CalculatedRot = new Vector3(-60f, initialRot.y, initialRot.z);
                 break;
             case VerticalAngle.High:
-                //CalculatedRot = new Vector3(-30f, initialRot.y, initialRot.z);
-                CalculatedRot = BaseDetail.transform.position.RotatePointAroundPivot(CurrentCamera.transform.position, new Vector3(-30f, initialRot.y, 0));
+                CalculatedRot = new Vector3(-20f, initialRot.y, initialRot.z);
+                //CalculatedRot = BaseDetail.transform.position.RotatePointAroundPivot(CurrentCamera.transform.position, new Vector3(-30f, initialRot.y, 0));
                 break;
             case VerticalAngle.EyeLevel:
                 CalculatedRot = initialRot;
                 break;
             case VerticalAngle.Low:
-                CalculatedRot = new Vector3(30f, initialRot.y, initialRot.z);
+                CalculatedRot = new Vector3(15f, initialRot.y, initialRot.z);
                 break;
             case VerticalAngle.MouseEye:
                 CalculatedRot = new Vector3(60f, initialRot.y, initialRot.z);

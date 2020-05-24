@@ -10,15 +10,15 @@ public static class ModelExtension
         Bounds resultBounds;
         if (go.GetComponent<MeshFilter>() != null)
             resultBounds = go.GetComponent<MeshFilter>().mesh.bounds;
-        else if (go.GetComponentInChildren<MeshFilter>() != null)
-            resultBounds = go.GetComponentInChildren<MeshFilter>().sharedMesh.bounds;
+        else if (go.GetComponent<MeshFilter>() != null)
+            resultBounds = go.GetComponent<MeshFilter>().sharedMesh.bounds;
         else if (go.GetComponentInChildren<SkinnedMeshRenderer>() != null)
             resultBounds = go.GetComponentInChildren<SkinnedMeshRenderer>().bounds;
-        else
+        else if(go.transform.childCount>0)
         {
-            Debug.LogError("no bounds on " + go.name);
-            resultBounds = new Bounds();
+            resultBounds = GetOverallBounds(go.GetAllChildren());
         }
+        else { Debug.LogError("no bounds on " + go.name);  resultBounds = new Bounds(); }
 
         var scale = go.transform.localScale;
         var vector = new Vector3(resultBounds.size.x * scale.x, resultBounds.size.y * scale.y, resultBounds.size.z * scale.z);
@@ -34,7 +34,15 @@ public static class ModelExtension
     {
         return Quaternion.Euler(angles) * ((point - pivot) + pivot);
     }
-   
+    private static Bounds GetOverallBounds(List<GameObject> children)
+    {
+        Bounds resultBounds = new Bounds();
+        foreach (var child in children)
+        {
+            resultBounds.Encapsulate(child.GetBounds());
+        }
+        return resultBounds;
+    }
 }
 
 public class SceneObject : MonoBehaviour, INameAlternatable

@@ -84,6 +84,15 @@ public class ObjectsPlacementController : MonoBehaviour
                                     .Values
                                     .ToList();
 
+        while (FocusGroups.FirstOrDefault(x => x.transform.childCount == 0))
+        {
+            var stuffToRemove = FocusGroups.SingleOrDefault(s => s.transform.childCount == 0);
+            if (stuffToRemove != null)
+            {
+                FocusGroups.Remove(stuffToRemove);
+            }
+        }
+
         if (FocusGroups.Count > 1)// && FrameDescription.ParsedParts.FirstOrDefault(x => x.Text == ",") != null)
         {
             GameObject orphange = FocusGroups.Last();
@@ -128,9 +137,12 @@ public class ObjectsPlacementController : MonoBehaviour
                         break;
                 }
             }
-
-            GameObject orphange = GroupUp(Layer);
-            FocusGroups.Add(orphange);
+            if (Layer.Count != 0)
+            {
+                GameObject orphange = GroupUp(Layer);
+                FocusGroups.Add(orphange);
+            }
+            
 
         }
     }

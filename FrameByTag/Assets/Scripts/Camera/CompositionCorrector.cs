@@ -55,7 +55,6 @@ public class CompositionCorrector : MonoBehaviour
     {
         var freePositions = new List<Vector3>();
 
-
         foreach (var dot in third.GetComponent<ThirdBody>().Dots)
         {
             var screenPoint = Camera.WorldToScreenPoint(dot.position);
@@ -87,8 +86,8 @@ public class CompositionCorrector : MonoBehaviour
             return dots[0].position;
         else if (2 <= deltaBounds && deltaBounds < 4)
             return dots[1].position;
-        else if (4 <= deltaBounds && deltaBounds < 6)
-            return dots[2].position;
+        else if (4 <= deltaBounds )
+            return dots[4].position;
         else
             return dots[1].position;
 
