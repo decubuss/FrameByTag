@@ -71,7 +71,7 @@ public class ObjectsPlacementController : MonoBehaviour
         if (tagItemDict == LastExecutedTagItemDict || elements.Count == 0)
             return;//OnContentPreparedEvent?.Invoke();
         else
-            Invoke("ClearScene", 0.5f);
+            ClearScene();
         SpawnAllElements(tags, elements);
 
         foreach (var dictElem in tagItemDict.Keys.Where(x => x.TagType == TagType.Spatial))
@@ -79,29 +79,34 @@ public class ObjectsPlacementController : MonoBehaviour
             MoveBySpatial(dictElem, tagItemDict);
         }
 
+        foreach(var group in FocusGroups)
+        {
+            if (group.transform.childCount == 0) { Destroy(group); }
+        }
+
         var unparenetedGroup = LastShotElements.Where(x=>x.Value.transform.parent == null)//(x => x.Key.Layer > 1)
                                     .ToDictionary(g => g.Key,g=>g.Value)
                                     .Values
                                     .ToList();
 
-        while (FocusGroups.SingleOrDefault(x => x.transform.childCount == 0))
-        {
-            var stuffToRemove = FocusGroups.SingleOrDefault(s => s.transform.childCount == 0);
-            if (stuffToRemove != null)
-            {
-                FocusGroups.Remove(stuffToRemove);
-                Destroy(stuffToRemove);
-            }
-        }
+        //while (FocusGroups.SingleOrDefault(x => x.transform.childCount == 0))
+        //{
+        //    var stuffToRemove = FocusGroups.SingleOrDefault(s => s.transform.childCount == 0);
+        //    if (stuffToRemove != null)
+        //    {
+        //        FocusGroups.Remove(stuffToRemove);
+        //        Destroy(stuffToRemove);
+        //    }
+        //}
 
-        if (FocusGroups.Count > 1)// && FrameDescription.ParsedParts.FirstOrDefault(x => x.Text == ",") != null)
-        {
-            GameObject orphange = FocusGroups.Last();
-            orphange.name = "Orphange";
-            if (FocusGroups.Count > 1)
-                orphange.transform.position = new Vector3(-10000f, -10000, -10000f);
-            FocusGroups.Add(orphange);
-        }
+        //if (FocusGroups.Count > 1)// && FrameDescription.ParsedParts.FirstOrDefault(x => x.Text == ",") != null)
+        //{
+        //    GameObject orphange = FocusGroups.Last();
+        //    orphange.name = "Orphange";
+        //    if (FocusGroups.Count > 1)
+        //        orphange.transform.position = new Vector3(-10000f, -10000, -10000f);
+        //    FocusGroups.Add(orphange);
+        //}
             //}
             //else if (FocusGroups.Count == 0)
             //{
