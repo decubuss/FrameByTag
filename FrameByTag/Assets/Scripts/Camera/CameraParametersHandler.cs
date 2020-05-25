@@ -13,16 +13,13 @@ public static class ShotsStatsExtension
     {
         var usefulParts = sentenceParts.Where(x => UsefulTypes.Contains(x.Type));
         var firstElement = usefulParts.First();
-
         switch (firstElement.Type)
         {
             case "NNS": 
                 shots[ShotType.LongShot] += 0.1f;
                 shots[ShotType.ExtremelyLongShot] += 0.1f;
                 break;
-            case "NN":  case "NNP":
-                shots[ShotType.LongShot] += 0.2f;
-                break;
+            
             case "VB": case "VBG":
                 shots[ShotType.MediumShot] += 0.2f;
                 break;
@@ -30,7 +27,7 @@ public static class ShotsStatsExtension
                 shots[ShotType.CloseShot] += 0.1f;
                 shots[ShotType.MediumShot] += 0.1f;
                 break;
-            default:
+            default:  case "NN":  case "NNP":
                 shots[ShotType.LongShot] += 0.2f;
                 break;
         }

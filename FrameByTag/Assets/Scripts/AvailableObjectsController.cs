@@ -23,8 +23,10 @@ public class AvailableObjectsController
 
     public static void AddCharacter(string name, string[] altnames, Color matColor)
     {
-        Material newMat = new Material(Shader.Find("Specular"));
-        newMat.color = matColor;
+        Material newMat = new Material(Shader.Find("Standard (Specular setup)"))
+        {
+            color = matColor
+        };
 
         var dummy = (GameObject)Resources.Load("Prefabs/Doll");
         GameObject newSceneObject = Object.Instantiate(dummy, new Vector3(0, -1000f, 0), Quaternion.identity);

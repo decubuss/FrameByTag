@@ -26,8 +26,7 @@ public class SpatialApplier
             AltNames.Add(spatial.AltNames, spatial.Name);
         }
     }
-    //TODO: constructor which assembles list of alt names
-    //TODO: functions of EACH spatial for 1 day
+   
     public static Dictionary<string, string> GetAlternateNames()
     {
         var result = Helper.DictBreakDown(AltNames);
@@ -108,7 +107,6 @@ public class SpatialApplier
         {
             obj.transform.rotation = ObjectsPlacementController.RotationToDirection(obj.transform.position, subjectPointer.transform.position);
         }
-        //subjectPointer.transform.rotation = ()
     }
     public void ObjectWithSubject(List<GameObject> objectsPointer, GameObject subjectPointer)
     {

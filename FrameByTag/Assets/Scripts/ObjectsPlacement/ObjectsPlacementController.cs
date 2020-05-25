@@ -71,7 +71,7 @@ public class ObjectsPlacementController : MonoBehaviour
         if (tagItemDict == LastExecutedTagItemDict || elements.Count == 0)
             return;//OnContentPreparedEvent?.Invoke();
         else
-            ClearScene();
+            Invoke("ClearScene", 0.5f);
         SpawnAllElements(tags, elements);
 
         foreach (var dictElem in tagItemDict.Keys.Where(x => x.TagType == TagType.Spatial))
@@ -84,12 +84,13 @@ public class ObjectsPlacementController : MonoBehaviour
                                     .Values
                                     .ToList();
 
-        while (FocusGroups.FirstOrDefault(x => x.transform.childCount == 0))
+        while (FocusGroups.SingleOrDefault(x => x.transform.childCount == 0))
         {
             var stuffToRemove = FocusGroups.SingleOrDefault(s => s.transform.childCount == 0);
             if (stuffToRemove != null)
             {
                 FocusGroups.Remove(stuffToRemove);
+                Destroy(stuffToRemove);
             }
         }
 
@@ -243,6 +244,7 @@ public class ObjectsPlacementController : MonoBehaviour
         var parent = new GameObject();
         Vector3 pos = GroupAveragePos(children);
         parent.transform.position = pos;
+        parent.name = children.First().name + "fuqo";
         foreach(var child in children)
         {
             child.transform.parent = parent.transform;

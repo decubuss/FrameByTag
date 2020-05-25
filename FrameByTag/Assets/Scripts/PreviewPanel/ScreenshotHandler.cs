@@ -40,7 +40,7 @@ public class ScreenshotHandler : MonoBehaviour
     private void SaveScreenShot(Texture2D render, int screenshotIndex, int width, int height)
     {
         byte[] byteArray = render.EncodeToPNG();
-        string path = Application.streamingAssetsPath + string.Format(@"\{0}.png", screenshotIndex);//  Application.dataPath + string.Format(@"\Screenshots\{0}.png", screenshotIndex);
+        string path = Application.streamingAssetsPath + string.Format(@"\{0}.png", screenshotIndex);
         System.IO.File.WriteAllBytes(path, byteArray);
 
         LastScreenshot = new Texture2D(width, height);

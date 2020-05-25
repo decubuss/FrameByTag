@@ -11,6 +11,20 @@ using System.IO;
 using OpenNLP.Tools.Lang.English;
 using System;
 
+public static class TaggedElementsExtension
+{
+    public static Dictionary<DescriptionTag,ShotElement> SortByIndex(this Dictionary<DescriptionTag, ShotElement> dict)
+    {
+        if (dict.Count == 0) { return null; }
+        var keys = dict.Keys.OrderBy(x => x.Index);
+        var resultDict = new Dictionary<DescriptionTag, ShotElement>();
+        foreach (var key in keys)
+        {
+            resultDict.Add(key, dict[key]);
+        }
+        return resultDict;
+    }
+}
 public class ObjectsPlacementHandler
 {
     public static string LastTaggedInput;
@@ -47,15 +61,15 @@ public class ObjectsPlacementHandler
         processedInput = HandleStates(processedInput, ref tagItemSeq);
         HandleRelations(processedInput, ref tagItemSeq);
 
-        //foreach (var tag in tagItemSeq.Keys)
-        //{
-        //    string woof = tagItemSeq[tag] != null ? tagItemSeq[tag].ToString() : "";
-        //    if (tag != null)
-        //        Debug.Log(tag.ToString() + " <<>> " + woof);
-        //}
+        foreach (var tag in tagItemSeq.Keys)
+        {
+            string woof = tagItemSeq[tag] != null ? tagItemSeq[tag].ToString() : "";
+            if (tag != null)
+                Debug.Log(tag.ToString() + " <<>> " + woof);
+        }
 
         LastTaggedInput = processedInput;
-        OnSentenceProcessedEvent?.Invoke(tagItemSeq);
+        OnSentenceProcessedEvent?.Invoke(tagItemSeq.SortByIndex());
     }
     private string HandleItems(string rawinput, ref Dictionary<DescriptionTag, ShotElement> itemTags)
     {
@@ -97,8 +111,8 @@ public class ObjectsPlacementHandler
 
                 subjectItemGroup.Value.Rank = spatial.SubjectRank;
                 subjectItemGroup.Value.Layer = objectItemGroup.First().Value.Layer;
-                //subjectItemGroup.Value.Rank == ShotHierarchyRank.Addition ? 
-                //                                                            objectItemGroup.First().Value.Layer : 
+                //subjectItemGroup.Value.Rank == ShotHierarchyRank.Addition ?
+                //                                                            objectItemGroup.First().Value.Layer :
                 //                                                            objectItemGroup.First().Value.Layer + 1;
                 itemTags[subjectItemGroup.Key] = subjectItemGroup.Value;
 
