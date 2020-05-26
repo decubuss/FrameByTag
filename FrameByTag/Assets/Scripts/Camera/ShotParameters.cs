@@ -9,13 +9,15 @@ public struct ShotParameters
     public VerticalAngle VAngle;
     public HorizontalThird Third;
     public bool isfromBehind;
-    public ShotParameters(ShotType shotType, HorizontalAngle hAngle, VerticalAngle vAngle, HorizontalThird third, bool fromBehind = false)
+    public bool isYPowered;
+    public ShotParameters(ShotType shotType, HorizontalAngle hAngle, VerticalAngle vAngle, HorizontalThird third, bool fromBehind = false, bool yPowered = true)
     {
         ShotType = shotType;
         HAngle = hAngle;
         VAngle = vAngle;
         Third = third;
         isfromBehind = fromBehind;
+        isYPowered = yPowered;
     }
 
    

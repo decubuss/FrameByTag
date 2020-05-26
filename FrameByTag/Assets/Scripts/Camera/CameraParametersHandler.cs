@@ -162,11 +162,14 @@ public class CameraParametersHandler
         bool isFromBehind = false;
         if (processedInput.Contains("Backshot"))
             isFromBehind = true;
+        bool yPowered = GeneratedParameters.ShotType == ShotType.CloseShot || GeneratedParameters.ShotType == ShotType.MediumShot ?
+                    false : true;
         ResultParameters = new ShotParameters( HandleShotType(processedInput),
                                                 HandleHorizontalAngle(processedInput),
                                                 HandleVerticalAngle(processedInput),
                                                 HandleThird(processedInput),
-                                                isFromBehind);//those are return generated if null 
+                                                isFromBehind,
+                                                yPowered);
 
         return ResultParameters;
     }
@@ -224,6 +227,7 @@ public class CameraParametersHandler
             if (processedInput.Contains(verticalAngle.ToString()))
                 return verticalAngle;
         }
+        
         return GeneratedParameters.VAngle;
     }
     private HorizontalThird HandleThird(string processedInput)

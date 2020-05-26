@@ -120,7 +120,7 @@ public class CameraSetter : MonoBehaviour
 
 
     }
-    private void ApplyHAngle(HorizontalAngle angle, float pow = 1)
+    private void ApplyHAngle(HorizontalAngle angle, bool yTwisted)
     {
         Vector3 calculatedRot = BaseDetail.transform.eulerAngles;
         Vector3 initalRot = BaseDetail.transform.eulerAngles;
@@ -134,7 +134,7 @@ public class CameraSetter : MonoBehaviour
         Vector3 cross = Vector3.Cross(focus, cameraPos);
         deltaAngle = cross.y < 0 ? -deltaAngle : deltaAngle;
 
-        float yAngle = Mathf.Lerp(15f, 45f, pow);
+        float yAngle = yTwisted ? 30f : 15f;
         switch (angle)
         {
             case HorizontalAngle.Front:
@@ -208,7 +208,6 @@ public class CameraSetter : MonoBehaviour
         {
             var exception = OPController.FocusGroups.FirstOrDefault(x => x.name == "Orphange");
             focusGroup = FocusGroup = exception != null ? OPController.FocusLayer.Except(exception.GetAllChildren()).ToList() : FocusGroup = OPController.FocusLayer;
-            Debug.Log("Boo");
         }
         var focusFirst = focusGroup.First();
         var focusLast = focusGroup.Last();
@@ -299,7 +298,7 @@ public class CameraSetter : MonoBehaviour
         _shot = shotParameters.ShotType;
         ApplyThird(shotParameters.Third);
         ApplyVAngle(shotParameters.VAngle);
-        ApplyHAngle(shotParameters.HAngle);
+        ApplyHAngle(shotParameters.HAngle, shotParameters.isYPowered);
         ObjectsPlacementController.OnContentPreparedEvent -= BuildNewShot;
         if(OPController.FocusGroups.FirstOrDefault(x=>x.name=="Orphange"))
             CompositionCorrector.CorrectGroups(CurrentCamera, OPController, _third);

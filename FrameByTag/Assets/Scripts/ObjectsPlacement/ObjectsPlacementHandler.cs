@@ -61,12 +61,12 @@ public class ObjectsPlacementHandler
         processedInput = HandleStates(processedInput, ref tagItemSeq);
         HandleRelations(processedInput, ref tagItemSeq);
 
-        foreach (var tag in tagItemSeq.Keys)
-        {
-            string woof = tagItemSeq[tag] != null ? tagItemSeq[tag].ToString() : "";
-            if (tag != null)
-                Debug.Log(tag.ToString() + " <<>> " + woof);
-        }
+        //foreach (var tag in tagItemSeq.Keys)
+        //{
+        //    string woof = tagItemSeq[tag] != null ? tagItemSeq[tag].ToString() : "";
+        //    if (tag != null)
+        //        Debug.Log(tag.ToString() + " <<>> " + woof);
+        //}
 
         LastTaggedInput = processedInput;
         OnSentenceProcessedEvent?.Invoke(tagItemSeq.SortByIndex());

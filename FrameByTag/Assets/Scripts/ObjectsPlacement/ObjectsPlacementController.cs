@@ -79,44 +79,33 @@ public class ObjectsPlacementController : MonoBehaviour
             MoveBySpatial(dictElem, tagItemDict);
         }
 
-        foreach(var group in FocusGroups)
+        var copy = new List<GameObject>();
+        copy = FocusGroups;
+        foreach(var group in copy.ToList())
         {
-            if (group.transform.childCount == 0) { Destroy(group); }
+            if (group.transform.childCount == 0)
+            {
+                Destroy(group);
+                FocusGroups.Remove(group);
+            }
         }
+        //dummy and lummy are standing by the cliff with parker
 
         var unparenetedGroup = LastShotElements.Where(x=>x.Value.transform.parent == null)//(x => x.Key.Layer > 1)
                                     .ToDictionary(g => g.Key,g=>g.Value)
                                     .Values
                                     .ToList();
 
-        //while (FocusGroups.SingleOrDefault(x => x.transform.childCount == 0))
-        //{
-        //    var stuffToRemove = FocusGroups.SingleOrDefault(s => s.transform.childCount == 0);
-        //    if (stuffToRemove != null)
-        //    {
-        //        FocusGroups.Remove(stuffToRemove);
-        //        Destroy(stuffToRemove);
-        //    }
-        //}
+        if (FocusGroups.Count > 1)// && FrameDescription.ParsedParts.FirstOrDefault(x => x.Text == ",") != null)
+        {
+            var orphange = FocusGroups.Last();
+            orphange.name = "Orphange";
+            if (FocusGroups.Count > 1)
+                orphange.transform.position = new Vector3(-10000f, -10000, -10000f);
+            FocusGroups.Add(orphange);
+        }
 
-        //if (FocusGroups.Count > 1)// && FrameDescription.ParsedParts.FirstOrDefault(x => x.Text == ",") != null)
-        //{
-        //    GameObject orphange = FocusGroups.Last();
-        //    orphange.name = "Orphange";
-        //    if (FocusGroups.Count > 1)
-        //        orphange.transform.position = new Vector3(-10000f, -10000, -10000f);
-        //    FocusGroups.Add(orphange);
-        //}
-            //}
-            //else if (FocusGroups.Count == 0)
-            //{
-            //    GameObject orphange = GroupUp(unparenetedGroup);
-            //    FocusGroups.Add(orphange);
-            //}
-
-
-
-         if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
+        if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
             SceneDefaultContentSetup();
         LastExecutedTagItemDict = tagItemDict;
     }
