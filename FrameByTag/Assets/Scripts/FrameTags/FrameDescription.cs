@@ -30,7 +30,6 @@ public class FrameDescription : MonoBehaviour
     }
     public void OnInputEnter()
     {
-        //TODO: MINOR - make cursor stand there after enter
         if (!string.IsNullOrWhiteSpace(DescriptionSource.text) && DescriptionSource.text != RawFrameInput)
         {
             RawFrameInput = DescriptionSource.text;
@@ -43,7 +42,7 @@ public class FrameDescription : MonoBehaviour
             }
             //else
             //    ParsedParts = null;
-
+            
             OnDescriptionChangedEvent?.Invoke(RawFrameInput);
         }
     }

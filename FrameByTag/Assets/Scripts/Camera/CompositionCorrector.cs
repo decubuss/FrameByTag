@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-public class CompositionCorrector : MonoBehaviour
+public class CompositionCorrector
 {
     private static GameObject[] _thirds;
     private static Camera Camera;
@@ -17,6 +17,7 @@ public class CompositionCorrector : MonoBehaviour
         _thirds = GetThirds(camera);
         var groupToEdit = op.FocusGroups.FirstOrDefault(x=>x.name=="Orphange");
         var groupNewPosition = CalculateGroupPos(usedThird, groupToEdit.GetAllChildren());
+        
         groupToEdit.transform.position = new Vector3(groupNewPosition.x, 0, groupNewPosition.z);
     }
     
@@ -43,29 +44,30 @@ public class CompositionCorrector : MonoBehaviour
         else
             layer = 15;
 
-        return HitTheGround(layer, chosenThird.transform.position).point;
+        OP.FocusGroups.First().SetActive(false);
+        var result = HitTheGround(layer, chosenThird.transform.position).point;
+
+        if (result == Vector3.zero)
+        {
+            
+            result = HitTheGround(layer, _thirds[1].transform.position).point;
+        }
+
+        OP.FocusGroups.First().SetActive(true);
+        return result;
     }
     private static RaycastHit HitTheGround(int layer, Vector3 third)
     {
-        var screenPoint = Camera.WorldToScreenPoint(third);
+        var screenPoint = Camera.WorldToScreenPoint(third);// + new Vector3(0,1,0)
         var worldRay = Camera.ScreenPointToRay(screenPoint);
-        RaycastHit[] hits = Physics.RaycastAll(Camera.transform.position, worldRay.direction, 1000f);
-        var hit = hits.FirstOrDefault(x => x.collider.gameObject.layer == layer);
-        Debug.DrawRay(Camera.transform.position, worldRay.direction, Color.white, 1000f);
+        var hits = Physics.RaycastAll(Camera.transform.position, worldRay.direction * 1000f, 10000f, ~layer, QueryTriggerInteraction.Collide);
+        //Debug.DrawRay(Camera.transform.position, worldRay.direction * 1000, Color.white, 1000f);
 
+        //RaycastHit hit = hits.FirstOrDefault(x => x.collider.gameObject.layer == layer);
+        
 
-        if (hits.Contains(hit))//, OP.GroundMesh.layer))//, 1000f, ground.layer))
-        {
-            Debug.Log(hit.point + " " + layer);
-            return hit;
-        }
-        else
-        {
-            Debug.LogError("no hit layer " + layer);
-        }
-        return hit;
+        return hits.FirstOrDefault(x => x.collider.gameObject.layer == layer);
     }
-    
     private static GameObject[] GetThirds(Camera camera)
     {
         if (_thirds == null)
@@ -82,6 +84,12 @@ public class CompositionCorrector : MonoBehaviour
         }
         else
             return _thirds;
+
+    }
+
+    public static void CameraZoomFix()
+    {
+        var focusGroup = OP.FocusGroups.First();
 
     }
 

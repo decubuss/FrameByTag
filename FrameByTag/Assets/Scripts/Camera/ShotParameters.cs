@@ -9,7 +9,7 @@ public struct ShotParameters
     public VerticalAngle VAngle;
     public HorizontalThird Third;
     public bool isfromBehind;
-    public bool isYPowered;
+    public bool isYBig;
     public ShotParameters(ShotType shotType, HorizontalAngle hAngle, VerticalAngle vAngle, HorizontalThird third, bool fromBehind = false, bool yPowered = true)
     {
         ShotType = shotType;
@@ -17,7 +17,7 @@ public struct ShotParameters
         VAngle = vAngle;
         Third = third;
         isfromBehind = fromBehind;
-        isYPowered = yPowered;
+        isYBig = yPowered;
     }
 
    

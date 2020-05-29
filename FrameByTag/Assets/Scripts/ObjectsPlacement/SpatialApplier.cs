@@ -5,18 +5,22 @@ using System.Linq;
 
 public class SpatialApplier 
 {
+    public static string[] OrphangeSpatials = new string[]
+    {
+        "At"
+    };
     private static List<Spatial> Spatials = new List<Spatial>()
     {
         new Spatial("By", new string[] { "beside", "by", "by the", "next to" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
-        new Spatial("In", new string[] {"at the", "in the", "in"}, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
+        new Spatial("In", new string[] {"in the", "in"}, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
         new Spatial("To", new string[] { "to the", "into" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.InFocus),
         new Spatial("With", new string[] { "to", "with" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.InFocus),
         new Spatial("Nearby", new string[] { "nearby" }, ItemCollocation.Object_Subject_Spatial, ShotHierarchyRank.InFocus),
         new Spatial("Between", new string[] { "between"}, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.InFocus),
         new Spatial("Front", new string[] { "in front of" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
         new Spatial("Behind", new string[] { "behind the" }, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.Addition),
-        new Spatial("After", new string[] {"behind", "after"}, ItemCollocation.Object_Subject_Spatial, ShotHierarchyRank.InFocus)
-
+        new Spatial("After", new string[] {"behind", "after"}, ItemCollocation.Object_Subject_Spatial, ShotHierarchyRank.InFocus),
+        new Spatial("At", new string[] {"at the", "at"}, ItemCollocation.Object_Spatial_Subject, ShotHierarchyRank.InFocus)
     };
     private static Dictionary<string[], string> AltNames = new Dictionary<string[], string>();
     public SpatialApplier()

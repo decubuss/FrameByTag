@@ -57,7 +57,7 @@ public class ObjectsPlacementHandler
         var tagItemSeq = new Dictionary<DescriptionTag, ShotElement>();
         
         var processedInput = HandleItems(input, ref tagItemSeq);
-        processedInput = HandleSpatials(processedInput, ref tagItemSeq);//TODO: checkout
+        processedInput = HandleSpatials(processedInput, ref tagItemSeq);
         processedInput = HandleStates(processedInput, ref tagItemSeq);
         HandleRelations(processedInput, ref tagItemSeq);
 
@@ -110,7 +110,8 @@ public class ObjectsPlacementHandler
                 var objectItemGroup = spatial.FindSpatialObject(itemTags, spatialIndex, spatialIndex);
 
                 subjectItemGroup.Value.Rank = spatial.SubjectRank;
-                subjectItemGroup.Value.Layer = objectItemGroup.First().Value.Layer;
+                subjectItemGroup.Value.Layer = SpatialApplier.OrphangeSpatials.Contains(spatialName.Value) ?
+                                                objectItemGroup.First().Value.Layer + 1 : objectItemGroup.First().Value.Layer;
                 //subjectItemGroup.Value.Rank == ShotHierarchyRank.Addition ?
                 //                                                            objectItemGroup.First().Value.Layer :
                 //                                                            objectItemGroup.First().Value.Layer + 1;
@@ -213,17 +214,6 @@ public class ObjectsPlacementHandler
         var _sentenceDetector = new EnglishMaximumEntropySentenceDetector(Directory.GetCurrentDirectory() + @"\Models\" + "EnglishSD.nbin");
 
         return _sentenceDetector.SentenceDetect(paragraph);
-    }
-    private void GatherItemInfo(string processedinput)
-    {
-        var parts = processedinput.Split(' ');
-        for (int i = 0; i < parts.Length; i++)
-        {
-            if (parts[i].Contains("NN"))
-            {
-                var result = new Tuple<int, string>(i, parts[i]);
-            }
-        }
     }
     static void PartsDetection(string expression, int index)
     {

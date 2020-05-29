@@ -103,6 +103,8 @@ public class ObjectsPlacementController : MonoBehaviour
             if (FocusGroups.Count > 1)
                 orphange.transform.position = new Vector3(-10000f, -10000, -10000f);
             FocusGroups.Add(orphange);
+
+            FocusGroups.First().layer = LayerMask.NameToLayer("Ignore Raycast");
         }
 
         if (FocusLayer.Count == 0 && BackgroundLayer.Count == 0)
@@ -224,8 +226,11 @@ public class ObjectsPlacementController : MonoBehaviour
 
     private void MoveBySpatial(DescriptionTag spatialTag, Dictionary<DescriptionTag, ShotElement> tagItemDict)
     {
-        var group = this.SpatialApplier.Apply(spatialTag, ref LastShotElements, tagItemDict);
-        FocusGroups.Add(GroupUp(group));
+        if (!SpatialApplier.OrphangeSpatials.Contains(spatialTag.Keyword))
+        {
+            var group = this.SpatialApplier.Apply(spatialTag, ref LastShotElements, tagItemDict);
+            FocusGroups.Add(GroupUp(group));
+        }
     }
 
     private void ApplyState(ShotElement element, GameObject objectOnScene)

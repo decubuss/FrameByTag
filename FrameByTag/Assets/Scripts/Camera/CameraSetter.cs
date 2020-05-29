@@ -120,7 +120,7 @@ public class CameraSetter : MonoBehaviour
 
 
     }
-    private void ApplyHAngle(HorizontalAngle angle, bool yTwisted)
+    private void ApplyHAngle(HorizontalAngle angle, bool yBig)
     {
         Vector3 calculatedRot = BaseDetail.transform.eulerAngles;
         Vector3 initalRot = BaseDetail.transform.eulerAngles;
@@ -134,7 +134,7 @@ public class CameraSetter : MonoBehaviour
         Vector3 cross = Vector3.Cross(focus, cameraPos);
         deltaAngle = cross.y < 0 ? -deltaAngle : deltaAngle;
 
-        float yAngle = yTwisted ? 30f : 15f;
+        float yAngle = yBig ? 35f : 15f;
         switch (angle)
         {
             case HorizontalAngle.Front:
@@ -181,6 +181,40 @@ public class CameraSetter : MonoBehaviour
         }
         _verticalAngle = angle;
         BaseDetail.transform.eulerAngles = CalculatedRot;
+    }
+    private void ApplyVerticalAngle(VerticalAngle angle)
+    {
+        var overallHeight = FocusGroup.OrderByDescending(x => x.GetComponent<SceneObject>().Height)
+                                      .First();
+        int focusCount = FocusGroup.Count();
+        int halfIndex = FocusGroup.Count() / 2;
+        var sortedFocus = FocusGroup.OrderBy(x => x.GetComponent<SceneObject>().Height);
+        float medianHeight;
+        if ((focusCount % 2) == 0)
+        {
+            medianHeight = (sortedFocus.ElementAt(halfIndex).GetComponent<SceneObject>().Height
+                     + sortedFocus.ElementAt(halfIndex - 1).GetComponent<SceneObject>().Height) / 2;
+        }
+        else
+            medianHeight = sortedFocus.ElementAt(halfIndex).GetComponent<SceneObject>().Height;
+        switch (angle)
+        {
+            case VerticalAngle.BirdsEye:
+                break;
+            case VerticalAngle.High:
+                break;
+            case VerticalAngle.EyeLevel:
+
+                break;
+            case VerticalAngle.Low:
+                break;
+            case VerticalAngle.MouseEye:
+                break;
+        }
+        _verticalAngle = angle;
+        //BaseDetail.transform.eulerAngles = CalculatedRot;
+
+
     }
     private Vector3 CalculateCameraPosition(float springArmCoef)
     {
@@ -298,9 +332,11 @@ public class CameraSetter : MonoBehaviour
         _shot = shotParameters.ShotType;
         ApplyThird(shotParameters.Third);
         ApplyVAngle(shotParameters.VAngle);
-        ApplyHAngle(shotParameters.HAngle, shotParameters.isYPowered);
+
+        bool isYBig = FocusGroup.Count >= 2 ? true : shotParameters.isYBig;
+        ApplyHAngle(shotParameters.HAngle, isYBig);
         ObjectsPlacementController.OnContentPreparedEvent -= BuildNewShot;
-        if(OPController.FocusGroups.FirstOrDefault(x=>x.name=="Orphange"))
+        if (OPController.FocusGroups.FirstOrDefault(x => x.name == "Orphange"))
             CompositionCorrector.CorrectGroups(CurrentCamera, OPController, _third);
     }
 

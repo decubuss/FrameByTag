@@ -146,33 +146,31 @@ public class CameraParametersHandler
     }
     public ShotParameters ShotParametersHandle(string input)
     {
-        if(string.IsNullOrEmpty(input)) { return DefaultParams; }
+        if (string.IsNullOrEmpty(input)) { return DefaultParams; }
         GeneratedParameters = FrameDescription.ParsedParts != null ? GenerateShotByText() : DefaultParams;
 
-        var ShotOptionNames = Helper.DictSortByLength(CameraParametersAltNames);
+        var shotParameterNames = Helper.DictSortByLength(CameraParametersAltNames);
         var processedInput = input.ToLower();
-        foreach (var Option in ShotOptionNames)
+        foreach (var param in shotParameterNames)
         {
-            if (input.Contains( Option.Key))
+            if (input.Contains(param.Key))
             {
-                processedInput = processedInput.Replace(Option.Key, Option.Value);
+                processedInput = processedInput.Replace(param.Key, param.Value);
             }
         }
 
-        bool isFromBehind = false;
-        if (processedInput.Contains("Backshot"))
-            isFromBehind = true;
         bool yPowered = GeneratedParameters.ShotType == ShotType.CloseShot || GeneratedParameters.ShotType == ShotType.MediumShot ?
                     false : true;
-        ResultParameters = new ShotParameters( HandleShotType(processedInput),
+        ResultParameters = new ShotParameters(HandleShotType(processedInput),
                                                 HandleHorizontalAngle(processedInput),
                                                 HandleVerticalAngle(processedInput),
                                                 HandleThird(processedInput),
-                                                isFromBehind,
+                                                BackshotHandle(processedInput),
                                                 yPowered);
 
         return ResultParameters;
     }
+
     private ShotParameters GenerateShotByText()
     {
         var parts = FrameDescription.ParsedParts;
@@ -186,19 +184,28 @@ public class CameraParametersHandler
         shotPriority = shotPriority.SpatialElementsInfluence(parts);
         shotPriority = shotPriority.SentenceSubjectsInfluence(parts);
 
-        #region debug
-        foreach (var part in parts)
-        {
-            //Debug.Log(string.Format("{0} <<{1}>> {2}", part.Type, part.Value, part.Parent));
-        }
-        #endregion debug
+        //#region debug
+        //foreach (var part in parts)
+        //{
+        //    Debug.Log(string.Format("{0} <<{1}>> {2}", part.Type, part.Value, part.Parent));
+        //}
+        //#endregion debug
 
         var resultShot = new ShotParameters(shotPriority.OrderByDescending(x => x.Value).First().Key,
                                             DefaultParams.HAngle,
                                             DefaultParams.VAngle,
-                                            DefaultParams.Third); //DefaultParams;//new ShotParameters();
+                                            DefaultParams.Third); 
 
         return resultShot;
+    }
+    private bool IsBackshotByClues(Parse[] sentence)
+    {
+        string[] clues = new string[] { "at" };//SpatialApplier.OrphangeSpatials;
+        if(sentence.FirstOrDefault(x => clues.Contains(x.Value)) != null)
+        {
+            return true;
+        }
+        return false;
     }
 
     private ShotType HandleShotType(string processedInput)
@@ -239,6 +246,11 @@ public class CameraParametersHandler
         }
         return GeneratedParameters.Third;
     }
-    
-    
+    private bool BackshotHandle(string processedInput)
+    {
+        if (processedInput.Contains("Backshot") || IsBackshotByClues(FrameDescription.ParsedParts))
+            return true;
+        return false;
+    }
+
 }
