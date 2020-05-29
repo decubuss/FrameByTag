@@ -200,7 +200,7 @@ public class CameraParametersHandler
     }
     private bool IsBackshotByClues(Parse[] sentence)
     {
-        string[] clues = new string[] { "at" };//SpatialApplier.OrphangeSpatials;
+        string[] clues = new string[] { "at","away" };//SpatialApplier.OrphangeSpatials;
         if(sentence.FirstOrDefault(x => clues.Contains(x.Value)) != null)
         {
             return true;

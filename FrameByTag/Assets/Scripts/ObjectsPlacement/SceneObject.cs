@@ -154,9 +154,6 @@ public class SceneObject : MonoBehaviour, INameAlternatable
             return new Bounds();
         }
 
-        //var scale = gameObject.transform.localScale;
-        //var vector = new Vector3(resultBounds.size.x * scale.x, resultBounds.size.y * scale.y, resultBounds.size.z * scale.z);
-        //resultBounds = new Bounds(resultBounds.center, vector);
         return resultBounds;
     }
     private Bounds GetOverallBounds(List<GameObject> children)
@@ -218,7 +215,8 @@ public class SceneObject : MonoBehaviour, INameAlternatable
             return; 
         }
         Animator.speed = 0f;
-        Animator.PlayInFixedTime(stateName, 0, 0.0f);
+        float fixedTime = Random.Range(0.0f, 0.5f);
+        Animator.PlayInFixedTime(stateName, 0, fixedTime);
         CurrentState = stateName;
     }
     private Animator GetAnimator()

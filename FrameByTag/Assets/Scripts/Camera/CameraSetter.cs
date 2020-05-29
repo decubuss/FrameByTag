@@ -58,7 +58,7 @@ public class CameraSetter : MonoBehaviour
     }
     public ShotParameters GetShotParameters()
     {
-        return new ShotParameters(_shot, _horizontalAngle, _verticalAngle, _third);
+        return new ShotParameters(_shot, _horizontalAngle, _verticalAngle, _third, isFromBehind);
     }
     private void StartupShot()
     {
@@ -318,6 +318,14 @@ public class CameraSetter : MonoBehaviour
     {
         var shotParameters = CPHandler.ShotParametersHandle(FrameDescription.RawFrameInput);
         ExecuteParameters(shotParameters);
+
+        var orphange = OPController.FocusGroups.FirstOrDefault(x => x.name == "Orphange");
+        if (orphange != null)
+        {
+            CompositionCorrector.CorrectGroups(CurrentCamera, OPController, _third);
+            if (orphange.transform.position == Vector3.zero)
+                orphange.transform.position = new Vector3(orphange.transform.position.x, orphange.transform.position.x, orphange.transform.position.z + 25f);
+        }
     }
     public void ExecuteParameters(ShotParameters shotParameters)
     {
@@ -336,8 +344,8 @@ public class CameraSetter : MonoBehaviour
         bool isYBig = FocusGroup.Count >= 2 ? true : shotParameters.isYBig;
         ApplyHAngle(shotParameters.HAngle, isYBig);
         ObjectsPlacementController.OnContentPreparedEvent -= BuildNewShot;
-        if (OPController.FocusGroups.FirstOrDefault(x => x.name == "Orphange"))
-            CompositionCorrector.CorrectGroups(CurrentCamera, OPController, _third);
+       
+
     }
 
     #region shots

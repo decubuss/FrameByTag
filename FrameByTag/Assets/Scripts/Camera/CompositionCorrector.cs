@@ -24,7 +24,11 @@ public class CompositionCorrector
     private static Vector3 CalculateGroupPos(HorizontalThird thirdToIgnore, List<GameObject> groupToEdit)
     {
         if (OP == null) { return Vector3.zero; }
-        GameObject chosenThird = thirdToIgnore == HorizontalThird.LastThird ? _thirds[0] : _thirds[2];
+        GameObject chosenThird;
+        if (thirdToIgnore == HorizontalThird.Center)
+            chosenThird = _thirds[1];
+        else
+            chosenThird = thirdToIgnore == HorizontalThird.LastThird ? _thirds[0] : _thirds[2];
 
         Bounds primaryBounds = new Bounds();
         OP.FocusGroups.First()
